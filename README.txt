@@ -34,9 +34,16 @@ gradlew bootRun
 La app se iniciará en:
 http://localhost:8080
 
+si tienen ese puerto ocupado le dare error
+netstat -ano | findstr :8080
+el puerto que les de lo ponen y luego lo matan
+taskkill /PID **** /F
+
 resultado:
 {"status":"ok"}
 
 3. test2
 gradlew test --tests "cr.una.pai.ConnectivityTest"
+gradlew test --tests "cr.una.pai.StudyBlockValidationTest"
+
 Resultado: BUILD SUCCESSFUL

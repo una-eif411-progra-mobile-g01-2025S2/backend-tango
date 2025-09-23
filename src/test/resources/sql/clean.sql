@@ -1,0 +1,11 @@
+DELETE FROM calendar_event;
+DELETE FROM study_block;
+DELETE FROM task;
+DELETE FROM weekly_availability;
+DELETE FROM subject;
+DELETE FROM academic_period;
+DELETE FROM user_role;
+DELETE FROM role_privilege;
+DELETE FROM privilege;
+DELETE FROM "role";
+DELETE FROM app_user;
