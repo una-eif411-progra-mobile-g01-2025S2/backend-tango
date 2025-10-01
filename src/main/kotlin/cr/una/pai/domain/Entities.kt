@@ -4,6 +4,7 @@ import jakarta.persistence.*
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
+import java.io.Serializable
 import java.time.*
 import java.util.*
 
@@ -29,14 +30,39 @@ class User(
     var yearOfStudy: Int? = null,
     var university: String? = null,
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "user_role",
-        joinColumns = [JoinColumn(name = "user_id")],
-        inverseJoinColumns = [JoinColumn(name = "role_id")]
+    @OneToMany(
+        mappedBy = "user",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true
     )
-    var roles: MutableSet<Role> = mutableSetOf(),
+    var userRoles: MutableSet<UserRole> = mutableSetOf()
 )
+
+@Embeddable
+class UserRoleId(
+    var userId: UUID? = null,
+    var roleId: UUID? = null
+) : Serializable
+
+@Entity
+@Table(
+    name = "user_role",
+    indexes = [Index(name = "idx_user_role", columnList = "user_id,role_id", unique = true)]
+)
+class UserRole(
+    @EmbeddedId
+    var id: UserRoleId = UserRoleId(),
+
+    @ManyToOne
+    @MapsId("userId")
+    @JoinColumn(name = "user_id")
+    var user: User? = null,
+
+    @ManyToOne
+    @MapsId("roleId")
+    @JoinColumn(name = "role_id")
+    var role: Role? = null
+    )
 
 @Entity
 @Table(name = "role", indexes = [Index(name = "idx_role_name", columnList = "name", unique = true)])
@@ -45,14 +71,41 @@ class Role(
     @Column(nullable = false, unique = true) var name: String,
     var description: String? = null,
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "role_privilege",
-        joinColumns = [JoinColumn(name = "role_id")],
-        inverseJoinColumns = [JoinColumn(name = "privilege_id")]
+    @OneToMany(
+        mappedBy = "role",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true
     )
-    var privileges: MutableSet<Privilege> = mutableSetOf(),
+    var rolePrivileges: MutableSet<RolePrivilege> = mutableSetOf()
 )
+
+
+@Embeddable
+class RolePrivilegeId(
+    var roleId: UUID? = null,
+    var privilegeId: UUID? = null
+) : Serializable
+
+@Entity
+@Table(
+    name = "role_privilege",
+    indexes = [Index(name = "idx_role_privilege", columnList = "role_id,privilege_id", unique = true)]
+)
+class RolePrivilege(
+    @EmbeddedId
+    var id: RolePrivilegeId = RolePrivilegeId(),
+
+    @ManyToOne
+    @MapsId("roleId")
+    @JoinColumn(name = "role_id")
+    var role: Role? = null,
+
+    @ManyToOne
+    @MapsId("privilegeId")
+    @JoinColumn(name = "privilege_id")
+    var privilege: Privilege? = null
+)
+
 
 @Entity
 @Table(name = "privilege", indexes = [Index(name = "idx_priv_name", columnList = "name", unique = true)])
@@ -60,6 +113,9 @@ class Privilege(
     @Id @GeneratedValue var id: UUID? = null,
     @Column(nullable = false, unique = true) var name: String,
     var description: String? = null,
+
+    @OneToMany(mappedBy = "privilege")
+    var rolePrivileges: MutableSet<RolePrivilege> = mutableSetOf()
 )
 
 /* ========= Académico ========= */
