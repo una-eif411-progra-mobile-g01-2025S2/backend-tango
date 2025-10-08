@@ -6,8 +6,8 @@ import cr.una.pai.dto.TaskResult
 import org.mapstruct.*
 import java.util.*
 
-@Mapper(config = MapperConfig::class, uses = [TypeConverters::class])
-interface TaskMapper {
+@Mapper(config = MapperConfig::class)
+abstract class TaskMapper {
     @Mappings(
         Mapping(target = "id", ignore = true),
         Mapping(source = "userId", target = "user", qualifiedByName = ["refUser"]),
@@ -18,14 +18,14 @@ interface TaskMapper {
         Mapping(source = "deadline", target = "deadline"),
         Mapping(source = "status", target = "status", qualifiedByName = ["toTaskStatus"])
     )
-    fun toEntity(input: TaskInput, @Context ctx: MappingContext): Task
+    abstract fun toEntity(input: TaskInput, @Context ctx: MappingContext): Task
 
     @Mappings(
         Mapping(source = "user.id", target = "userId"),
         Mapping(source = "subject.id", target = "subjectId"),
         Mapping(source = "status", target = "status")
     )
-    fun toResult(entity: Task): TaskResult
+    abstract fun toResult(entity: Task): TaskResult
 
     @BeanMapping(ignoreByDefault = true)
     @Mappings(
@@ -37,11 +37,11 @@ interface TaskMapper {
         Mapping(source = "deadline", target = "deadline"),
         Mapping(source = "status", target = "status", qualifiedByName = ["toTaskStatus"])
     )
-    fun update(@MappingTarget target: Task, input: TaskInput, @Context ctx: MappingContext)
+    abstract fun update(@MappingTarget target: Task, input: TaskInput, @Context ctx: MappingContext)
 
     @Named("refUser")
-    fun mapUser(id: UUID?, @Context ctx: MappingContext) = ctx.refUser(id)
+    protected fun mapUser(id: UUID?, @Context ctx: MappingContext) = ctx.refUser(id)
 
     @Named("refSubject")
-    fun mapSubject(id: UUID?, @Context ctx: MappingContext) = ctx.refSubject(id)
+    protected fun mapSubject(id: UUID?, @Context ctx: MappingContext) = ctx.refSubject(id)
 }

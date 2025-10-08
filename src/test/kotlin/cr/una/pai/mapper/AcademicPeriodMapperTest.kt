@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.dao.InvalidDataAccessApiUsageException
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
@@ -39,8 +40,9 @@ class AcademicPeriodMapperTest @Autowired constructor(
             endDate = LocalDate.of(2025,1,1)
         )
         val entity = mapper.toEntity(bad)
-        assertThrows(IllegalArgumentException::class.java) {
+        val ex = assertThrows(InvalidDataAccessApiUsageException::class.java) {
             repo.saveAndFlush(entity) // triggers @PrePersist validation
         }
+        assertThat(ex.cause).isInstanceOf(IllegalArgumentException::class.java)
     }
 }

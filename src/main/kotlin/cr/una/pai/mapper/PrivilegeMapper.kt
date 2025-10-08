@@ -5,7 +5,7 @@ import cr.una.pai.dto.PrivilegeInput
 import cr.una.pai.dto.PrivilegeResult
 import org.mapstruct.*
 
-@Mapper(config = MapperConfig::class, uses = [TypeConverters::class])
+@Mapper(config = MapperConfig::class)
 interface PrivilegeMapper {
     @Mappings(
         Mapping(source = "name", target = "name"),

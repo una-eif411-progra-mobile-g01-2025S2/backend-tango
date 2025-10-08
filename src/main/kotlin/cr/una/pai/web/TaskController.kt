@@ -79,7 +79,8 @@ class TaskController(
         @RequestBody statusUpdate: Map<String, String>
     ): ResponseEntity<Any> =
         try {
-            val status = TaskStatus.valueOf(statusUpdate["status"] ?: throw IllegalArgumentException("status requerido"))
+            val raw = statusUpdate["status"]
+            val status = try { raw?.let { cr.una.pai.domain.TaskStatus.valueOf(it.trim().uppercase()) } ?: cr.una.pai.domain.TaskStatus.PENDING } catch (_: Exception) { cr.una.pai.domain.TaskStatus.PENDING }
             val updated = taskMapper.toResult(taskService.updateStatus(id, status))
             ResponseEntity.ok(updated)
         } catch (e: IllegalArgumentException) {

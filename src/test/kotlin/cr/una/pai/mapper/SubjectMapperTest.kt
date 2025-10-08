@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.dao.InvalidDataAccessApiUsageException
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.util.*
@@ -64,7 +65,8 @@ class SubjectMapperTest @Autowired constructor(
             endDate = LocalDate.of(2025,1,1)
         )
         val entity = subjectMapper.toEntity(bad, mappingContext)
-        assertThrows(IllegalArgumentException::class.java) { subjectRepository.saveAndFlush(entity) }
+        val ex = assertThrows(InvalidDataAccessApiUsageException::class.java) { subjectRepository.saveAndFlush(entity) }
+        assertThat(ex.cause).isInstanceOf(IllegalArgumentException::class.java)
     }
 
     @Test

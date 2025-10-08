@@ -5,7 +5,7 @@ import cr.una.pai.dto.RoleInput
 import cr.una.pai.dto.RoleResult
 import org.mapstruct.*
 
-@Mapper(config = MapperConfig::class, uses = [TypeConverters::class])
+@Mapper(config = MapperConfig::class)
 interface RoleMapper {
     @Mappings(
         Mapping(target = "id", ignore = true),
