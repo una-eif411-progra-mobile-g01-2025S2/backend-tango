@@ -1,10 +1,16 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
 	id("org.springframework.boot") version "3.2.5"
 	id("io.spring.dependency-management") version "1.1.5"
 	kotlin("jvm") version "1.9.25"
 	kotlin("plugin.spring") version "1.9.25"
 	kotlin("plugin.jpa") version "1.9.25"
+	kotlin("kapt") version "1.9.25"
 }
+
+group = "backend-tango"
+version = "0.0.1-SNAPSHOT"
 
 java {
 	toolchain {
@@ -12,17 +18,39 @@ java {
 	}
 }
 
+repositories {
+	mavenCentral()
+}
+
 dependencies {
+	// MapStruct core (actualizado a 1.6.0)
+	implementation ("org.mapstruct:mapstruct:1.6.0")
+	// Processor para Kotlin via Kapt
+	kapt("org.mapstruct:mapstruct-processor:1.6.0")
+
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-web")
+	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
+	kapt("org.springframework.boot:spring-boot-configuration-processor")
+
 	runtimeOnly("org.postgresql:postgresql")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	implementation("org.springframework.boot:spring-boot-starter-validation")
-
-	testRuntimeOnly("org.postgresql:postgresql")
 }
-tasks.test {
+
+// Configuración Kapt
+kapt {
+	correctErrorTypes = true
+}
+
+tasks.withType<KotlinCompile> {
+	kotlinOptions {
+		freeCompilerArgs += "-Xjsr305=strict"
+		jvmTarget = "17"
+	}
+}
+
+tasks.withType<Test> {
 	useJUnitPlatform()
 }

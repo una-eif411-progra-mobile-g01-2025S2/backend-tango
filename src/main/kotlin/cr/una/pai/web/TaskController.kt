@@ -1,102 +1,97 @@
 package cr.una.pai.web
 
-import cr.una.pai.domain.*
+import cr.una.pai.dto.TaskInput
+import cr.una.pai.dto.TaskResult
+import cr.una.pai.mapper.TaskMapper
 import cr.una.pai.service.TaskService
+import cr.una.pai.domain.TaskStatus
+import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import java.util.*
 
 @RestController
 @RequestMapping("\${api.endpoints.tasks}")
 @CrossOrigin(origins = ["\${spring.web.cors.allowed-origins}"])
+@Validated
 class TaskController(
-    private val taskService: TaskService
+    private val taskService: TaskService,
+    private val taskMapper: TaskMapper
 ) {
 
     @GetMapping
-    fun getAllTasks(): ResponseEntity<List<Task>> {
-        return ResponseEntity.ok(taskService.findAll())
-    }
+    fun getAllTasks(): ResponseEntity<List<TaskResult>> =
+        ResponseEntity.ok(taskService.findAllResults())
 
     @GetMapping("/{id}")
-    fun getTaskById(@PathVariable id: UUID): ResponseEntity<Task> {
-        return taskService.findById(id)
-            .map { ResponseEntity.ok(it) }
-            .orElse(ResponseEntity.notFound().build())
-    }
+    fun getTaskById(@PathVariable id: UUID): ResponseEntity<TaskResult> = try {
+        ResponseEntity.ok(taskService.findResultById(id))
+    } catch (e: IllegalArgumentException) { ResponseEntity.notFound().build() }
 
     @GetMapping("/user/{userId}")
-    fun getTasksByUserId(@PathVariable userId: UUID): ResponseEntity<List<Task>> {
-        return ResponseEntity.ok(taskService.findAllByUserId(userId))
-    }
+    fun getTasksByUserId(@PathVariable userId: UUID): ResponseEntity<List<TaskResult>> =
+        ResponseEntity.ok(taskService.findAllByUserId(userId).map(taskMapper::toResult))
 
     @GetMapping("/user/{userId}/status/{status}")
     fun getTasksByUserIdAndStatus(
         @PathVariable userId: UUID,
         @PathVariable status: TaskStatus
-    ): ResponseEntity<List<Task>> {
-        return ResponseEntity.ok(taskService.findAllByUserIdAndStatus(userId, status))
-    }
+    ): ResponseEntity<List<TaskResult>> =
+        ResponseEntity.ok(taskService.findAllByUserIdAndStatus(userId, status).map(taskMapper::toResult))
 
     @GetMapping("/subject/{subjectId}")
-    fun getTasksBySubjectId(@PathVariable subjectId: UUID): ResponseEntity<List<Task>> {
-        return ResponseEntity.ok(taskService.findAllBySubjectId(subjectId))
-    }
+    fun getTasksBySubjectId(@PathVariable subjectId: UUID): ResponseEntity<List<TaskResult>> =
+        ResponseEntity.ok(taskService.findAllBySubjectId(subjectId).map(taskMapper::toResult))
 
     @GetMapping("/user/{userId}/subject/{subjectId}")
     fun getTasksByUserIdAndSubjectId(
         @PathVariable userId: UUID,
         @PathVariable subjectId: UUID
-    ): ResponseEntity<List<Task>> {
-        return ResponseEntity.ok(taskService.findAllByUserIdAndSubjectId(userId, subjectId))
-    }
+    ): ResponseEntity<List<TaskResult>> =
+        ResponseEntity.ok(taskService.findAllByUserIdAndSubjectId(userId, subjectId).map(taskMapper::toResult))
 
     @PostMapping
-    fun createTask(@RequestBody task: Task): ResponseEntity<Any> {
-        return try {
-            val created = taskService.create(task)
+    fun createTask(@Valid @RequestBody input: TaskInput): ResponseEntity<Any> =
+        try {
+            val created = taskService.create(input)
             ResponseEntity.status(HttpStatus.CREATED).body(created)
         } catch (e: IllegalArgumentException) {
-            ResponseEntity.badRequest().body(mapOf("error" to e.message))
+            ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
         }
-    }
 
     @PutMapping("/{id}")
     fun updateTask(
         @PathVariable id: UUID,
-        @RequestBody task: Task
-    ): ResponseEntity<Any> {
-        return try {
-            val updated = taskService.update(id, task)
+        @Valid @RequestBody input: TaskInput
+    ): ResponseEntity<Any> =
+        try {
+            val updated = taskService.updateDto(id, input)
             ResponseEntity.ok(updated)
         } catch (e: IllegalArgumentException) {
-            ResponseEntity.badRequest().body(mapOf("error" to e.message))
+            ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
         }
-    }
 
     @PatchMapping("/{id}/status")
     fun updateTaskStatus(
         @PathVariable id: UUID,
         @RequestBody statusUpdate: Map<String, String>
-    ): ResponseEntity<Any> {
-        return try {
-            val status = TaskStatus.valueOf(statusUpdate["status"] ?: throw IllegalArgumentException("Status is required"))
-            val updated = taskService.updateStatus(id, status)
+    ): ResponseEntity<Any> =
+        try {
+            val status = TaskStatus.valueOf(statusUpdate["status"] ?: throw IllegalArgumentException("status requerido"))
+            val updated = taskMapper.toResult(taskService.updateStatus(id, status))
             ResponseEntity.ok(updated)
         } catch (e: IllegalArgumentException) {
-            ResponseEntity.badRequest().body(mapOf("error" to e.message))
+            ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
         }
-    }
 
     @DeleteMapping("/{id}")
-    fun deleteTask(@PathVariable id: UUID): ResponseEntity<Any> {
-        return try {
+    fun deleteTask(@PathVariable id: UUID): ResponseEntity<Any> =
+        try {
             taskService.delete(id)
             ResponseEntity.noContent().build()
         } catch (e: IllegalArgumentException) {
-            ResponseEntity.badRequest().body(mapOf("error" to e.message))
+            ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
         }
-    }
 }
-

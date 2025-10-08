@@ -8,24 +8,24 @@ import cr.una.pai.domain.CalendarEventStatus
 data class CalendarEventInput(
     var id: UUID? = null,
     var studyBlockId: UUID? = null,
-    var provider: CalendarProvider? = null,
+    var provider: String? = null, // changed to String
     var externalEventId: String? = null,
     var lastSyncAt: LocalDateTime? = null,
-    var status: CalendarEventStatus? = null
+    var status: String? = null // changed to String
 )
 
 data class CalendarEventCreateInput(
     var studyBlockId: UUID? = null,
-    var provider: CalendarProvider = CalendarProvider.GOOGLE,
+    var provider: String? = null,
     var externalEventId: String? = null,
     var lastSyncAt: LocalDateTime? = null,
-    var status: CalendarEventStatus = CalendarEventStatus.CREATED
+    var status: String? = null
 )
 
 data class CalendarEventUpdateInput(
     var externalEventId: String? = null,
     var lastSyncAt: LocalDateTime? = null,
-    var status: CalendarEventStatus? = null
+    var status: String? = null
 )
 
 data class CalendarEventResult(

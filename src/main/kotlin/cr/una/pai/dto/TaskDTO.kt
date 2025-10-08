@@ -10,7 +10,7 @@ data class TaskInput(
     var description: String? = null,
     var priority: Int? = null,
     var deadline: LocalDate? = null,
-    var status: TaskStatus? = null,
+    var status: String? = null, // changed to String for tolerant mapping
     var userId: UUID? = null,
     var subjectId: UUID? = null
 )
@@ -20,7 +20,7 @@ data class TaskCreateInput(
     var description: String? = null,
     var priority: Int,
     var deadline: LocalDate? = null,
-    var status: TaskStatus = TaskStatus.PENDING,
+    var status: String? = null, // allow omitted -> default PENDING
     var userId: UUID,
     var subjectId: UUID
 )
@@ -30,7 +30,7 @@ data class TaskUpdateInput(
     var description: String? = null,
     var priority: Int? = null,
     var deadline: LocalDate? = null,
-    var status: TaskStatus? = null
+    var status: String? = null
 )
 
 data class TaskResult(

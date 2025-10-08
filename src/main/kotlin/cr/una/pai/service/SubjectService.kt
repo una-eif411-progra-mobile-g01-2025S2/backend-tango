@@ -1,6 +1,14 @@
 package cr.una.pai.service
 
 import cr.una.pai.domain.*
+import cr.una.pai.dto.SubjectInput
+import cr.una.pai.dto.SubjectResult
+import cr.una.pai.mapper.SubjectMapper
+import cr.una.pai.mapper.MappingContext
+import cr.una.pai.mapper.mapWith
+import cr.una.pai.mapper.toResults
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
@@ -10,18 +18,15 @@ import java.util.*
 class SubjectService(
     private val subjectRepository: SubjectRepository,
     private val userRepository: UserRepository,
-    private val academicPeriodRepository: AcademicPeriodRepository
+    private val academicPeriodRepository: AcademicPeriodRepository,
+    private val subjectMapper: SubjectMapper,
+    private val mappingContext: MappingContext
 ) {
 
     fun findAll(): List<Subject> = subjectRepository.findAll()
-
     fun findById(id: UUID): Optional<Subject> = subjectRepository.findById(id)
-
-    fun findAllByUserId(userId: UUID): List<Subject> =
-        subjectRepository.findAllByUserId(userId)
-
-    fun findAllByUserIdAndPeriodId(userId: UUID, periodId: UUID): List<Subject> =
-        subjectRepository.findAllByUserIdAndPeriodId(userId, periodId)
+    fun findAllByUserId(userId: UUID): List<Subject> = subjectRepository.findAllByUserId(userId)
+    fun findAllByUserIdAndPeriodId(userId: UUID, periodId: UUID): List<Subject> = subjectRepository.findAllByUserIdAndPeriodId(userId, periodId)
 
     fun create(subject: Subject): Subject {
         // Validar que el usuario existe
@@ -66,4 +71,26 @@ class SubjectService(
         }
         subjectRepository.deleteById(id)
     }
+
+    // ================= DTO + Mapper =================
+    fun create(input: SubjectInput): SubjectResult {
+        if (input.userId == null || input.periodId == null || input.name == null || input.code == null)
+            throw IllegalArgumentException("userId, periodId, name y code son obligatorios")
+        subjectRepository.findByUserIdAndPeriodIdAndCode(input.userId!!, input.periodId!!, input.code!!)
+            .ifPresent { throw IllegalArgumentException("Ya existe una materia con código ${input.code} para este período") }
+        val entity = subjectMapper.toEntity(input, mappingContext)
+        return subjectMapper.toResult(subjectRepository.save(entity))
+    }
+
+    fun updateDto(id: UUID, input: SubjectInput): SubjectResult {
+        val entity = subjectRepository.findById(id).orElseThrow { IllegalArgumentException("Materia no encontrada: $id") }
+        subjectMapper.update(entity, input, mappingContext)
+        return subjectMapper.toResult(subjectRepository.save(entity))
+    }
+
+    fun findResultById(id: UUID): SubjectResult = subjectMapper.toResult(subjectRepository.findById(id).orElseThrow { IllegalArgumentException("Materia no encontrada: $id") })
+
+    fun findAllResults(): List<SubjectResult> = subjectRepository.findAll().toResults(subjectMapper::toResult)
+
+    fun findAllPaged(pageable: Pageable): Page<SubjectResult> = subjectRepository.findAll(pageable).mapWith(subjectMapper::toResult)
 }

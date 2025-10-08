@@ -1,6 +1,14 @@
 package cr.una.pai.service
 
 import cr.una.pai.domain.*
+import cr.una.pai.dto.StudyBlockInput
+import cr.una.pai.dto.StudyBlockResult
+import cr.una.pai.mapper.StudyBlockMapper
+import cr.una.pai.mapper.MappingContext
+import cr.una.pai.mapper.mapWith
+import cr.una.pai.mapper.toResults
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -12,24 +20,17 @@ class StudyBlockService(
     private val studyBlockRepository: StudyBlockRepository,
     private val userRepository: UserRepository,
     private val subjectRepository: SubjectRepository,
-    private val taskRepository: TaskRepository
+    private val taskRepository: TaskRepository,
+    private val studyBlockMapper: StudyBlockMapper,
+    private val mappingContext: MappingContext
 ) {
 
     fun findAll(): List<StudyBlock> = studyBlockRepository.findAll()
-
     fun findById(id: UUID): Optional<StudyBlock> = studyBlockRepository.findById(id)
-
-    fun findAllByUserId(userId: UUID): List<StudyBlock> =
-        studyBlockRepository.findAllByUserId(userId)
-
-    fun findAllByUserIdAndStatus(userId: UUID, status: StudyBlockStatus): List<StudyBlock> =
-        studyBlockRepository.findAllByUserIdAndStatus(userId, status)
-
-    fun findAllBySubjectId(subjectId: UUID): List<StudyBlock> =
-        studyBlockRepository.findAllBySubjectId(subjectId)
-
-    fun findAllByUserIdAndDateRange(userId: UUID, start: LocalDateTime, end: LocalDateTime): List<StudyBlock> =
-        studyBlockRepository.findAllByUserIdAndStartTimeBetween(userId, start, end)
+    fun findAllByUserId(userId: UUID): List<StudyBlock> = studyBlockRepository.findAllByUserId(userId)
+    fun findAllByUserIdAndStatus(userId: UUID, status: StudyBlockStatus): List<StudyBlock> = studyBlockRepository.findAllByUserIdAndStatus(userId, status)
+    fun findAllBySubjectId(subjectId: UUID): List<StudyBlock> = studyBlockRepository.findAllBySubjectId(subjectId)
+    fun findAllByUserIdAndDateRange(userId: UUID, start: LocalDateTime, end: LocalDateTime): List<StudyBlock> = studyBlockRepository.findAllByUserIdAndStartTimeBetween(userId, start, end)
 
     fun create(studyBlock: StudyBlock): StudyBlock {
         // Validar que el usuario existe
@@ -97,5 +98,29 @@ class StudyBlockService(
             throw IllegalArgumentException("El bloque de estudio se solapa con otro bloque existente")
         }
     }
-}
 
+    // ================= DTO + Mapper =================
+    fun create(input: StudyBlockInput): StudyBlockResult {
+        if (input.userId == null || input.subjectId == null || input.startTime == null || input.endTime == null || input.priority == null)
+            throw IllegalArgumentException("userId, subjectId, startTime, endTime y priority son obligatorios")
+        userRepository.findById(input.userId!!).orElseThrow { IllegalArgumentException("Usuario no encontrado: ${input.userId}") }
+        subjectRepository.findById(input.subjectId!!).orElseThrow { IllegalArgumentException("Materia no encontrada: ${input.subjectId}") }
+        input.taskId?.let { taskRepository.findById(it).orElseThrow { IllegalArgumentException("Tarea no encontrada: $it") } }
+        val entity = studyBlockMapper.toEntity(input, mappingContext)
+        validateNoOverlap(entity)
+        return studyBlockMapper.toResult(studyBlockRepository.save(entity))
+    }
+
+    fun updateDto(id: UUID, input: StudyBlockInput): StudyBlockResult {
+        val entity = studyBlockRepository.findById(id).orElseThrow { IllegalArgumentException("Bloque de estudio no encontrado: $id") }
+        studyBlockMapper.update(entity, input, mappingContext)
+        validateNoOverlap(entity)
+        return studyBlockMapper.toResult(studyBlockRepository.save(entity))
+    }
+
+    fun findResultById(id: UUID): StudyBlockResult = studyBlockMapper.toResult(studyBlockRepository.findById(id).orElseThrow { IllegalArgumentException("Bloque de estudio no encontrado: $id") })
+
+    fun findAllResults(): List<StudyBlockResult> = studyBlockRepository.findAll().toResults(studyBlockMapper::toResult)
+
+    fun findAllPaged(pageable: Pageable): Page<StudyBlockResult> = studyBlockRepository.findAll(pageable).mapWith(studyBlockMapper::toResult)
+}

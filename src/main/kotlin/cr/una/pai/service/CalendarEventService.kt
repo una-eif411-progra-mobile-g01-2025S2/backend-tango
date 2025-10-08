@@ -1,6 +1,14 @@
 package cr.una.pai.service
 
 import cr.una.pai.domain.*
+import cr.una.pai.dto.CalendarEventInput
+import cr.una.pai.dto.CalendarEventResult
+import cr.una.pai.mapper.CalendarEventMapper
+import cr.una.pai.mapper.MappingContext
+import cr.una.pai.mapper.mapWith
+import cr.una.pai.mapper.toResults
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -10,7 +18,9 @@ import java.util.*
 @Transactional
 class CalendarEventService(
     private val calendarEventRepository: CalendarEventRepository,
-    private val studyBlockRepository: StudyBlockRepository
+    private val studyBlockRepository: StudyBlockRepository,
+    private val calendarEventMapper: CalendarEventMapper,
+    private val mappingContext: MappingContext
 ) {
 
     fun findAll(): List<CalendarEvent> = calendarEventRepository.findAll()
@@ -70,5 +80,34 @@ class CalendarEventService(
         }
         calendarEventRepository.deleteById(id)
     }
-}
 
+    // ================= DTO + Mapper =================
+    fun create(input: CalendarEventInput): CalendarEventResult {
+        // Validar estudio si se provee
+        input.studyBlockId?.let { sbId ->
+            studyBlockRepository.findById(sbId)
+                .orElseThrow { IllegalArgumentException("Bloque de estudio no encontrado: $sbId") }
+            calendarEventRepository.findByStudyBlockId(sbId).ifPresent { throw IllegalArgumentException("El bloque ya tiene evento asociado") }
+        }
+        val entity = calendarEventMapper.toEntity(input, mappingContext)
+        return calendarEventMapper.toResult(calendarEventRepository.save(entity))
+    }
+
+    fun updateDto(id: UUID, input: CalendarEventInput): CalendarEventResult {
+        val entity = calendarEventRepository.findById(id).orElseThrow { IllegalArgumentException("Evento de calendario no encontrado: $id") }
+        calendarEventMapper.update(entity, input, mappingContext)
+        // Revalidar potencial conflicto de studyBlock
+        entity.studyBlock?.id?.let { sbId ->
+            calendarEventRepository.findByStudyBlockId(sbId).ifPresent { other ->
+                if (other.id != entity.id) throw IllegalArgumentException("El bloque de estudio ya tiene un evento de calendario asociado")
+            }
+        }
+        return calendarEventMapper.toResult(calendarEventRepository.save(entity))
+    }
+
+    fun findResultById(id: UUID): CalendarEventResult = calendarEventMapper.toResult(calendarEventRepository.findById(id).orElseThrow { IllegalArgumentException("Evento de calendario no encontrado: $id") })
+
+    fun findAllResults(): List<CalendarEventResult> = calendarEventRepository.findAll().toResults(calendarEventMapper::toResult)
+
+    fun findAllPaged(pageable: Pageable): Page<CalendarEventResult> = calendarEventRepository.findAll(pageable).mapWith(calendarEventMapper::toResult)
+}

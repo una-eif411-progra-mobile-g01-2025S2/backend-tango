@@ -10,6 +10,7 @@ data class UserInput(
     var degree: String? = null,
     var yearOfStudy: Int? = null,
     var university: String? = null,
+    var roleIds: List<UUID>? = null // IDs de roles para creación genérica / upsert
 )
 
 data class UserCreateInput(
@@ -19,6 +20,7 @@ data class UserCreateInput(
     var degree: String? = null,
     var yearOfStudy: Int? = null,
     var university: String? = null,
+    var roleIds: List<UUID>? = null // roles iniciales opcionales
 )
 
 data class UserUpdateInput(
@@ -27,6 +29,7 @@ data class UserUpdateInput(
     var degree: String? = null,
     var yearOfStudy: Int? = null,
     var university: String? = null,
+    var roleIds: List<UUID>? = null // reasignación opcional de roles
 )
 
 data class UserResult(
@@ -36,6 +39,6 @@ data class UserResult(
     var degree: String?,
     var yearOfStudy: Int?,
     var university: String?,
-    var roles: List<RoleResult> = emptyList()
+    var roles: List<RoleResult> = emptyList(),
+    var roleIds: List<UUID> = emptyList() // representación simplificada
 )
-
