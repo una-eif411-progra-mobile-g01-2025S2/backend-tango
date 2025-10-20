@@ -35,6 +35,12 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	kapt("org.springframework.boot:spring-boot-configuration-processor")
 
+	// JSON library para IA Service
+	implementation("org.json:json:20231013")
+
+	// WebFlux para WebClient (OpenRouter)
+	implementation("org.springframework.boot:spring-boot-starter-webflux")
+
 	runtimeOnly("org.postgresql:postgresql")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 }

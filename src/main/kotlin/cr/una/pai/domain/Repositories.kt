@@ -59,6 +59,9 @@ interface TaskRepository : JpaRepository<Task, UUID> {
     fun findAllByUserId(userId: UUID): List<Task>
     fun findAllBySubjectId(subjectId: UUID): List<Task>
     fun findAllByUserIdAndSubjectId(userId: UUID, subjectId: UUID): List<Task>
+
+    @Query("SELECT t FROM Task t JOIN FETCH t.subject WHERE t.user.id = :userId")
+    fun findAllByUserIdWithSubject(userId: UUID): List<Task>
 }
 
 interface StudyBlockRepository : JpaRepository<StudyBlock, UUID> {

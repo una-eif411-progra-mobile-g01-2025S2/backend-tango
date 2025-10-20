@@ -29,6 +29,7 @@ class TaskService(
     fun findAllByUserIdAndStatus(userId: UUID, status: TaskStatus): List<Task> = taskRepository.findAllByUserIdAndStatus(userId, status)
     fun findAllBySubjectId(subjectId: UUID): List<Task> = taskRepository.findAllBySubjectId(subjectId)
     fun findAllByUserIdAndSubjectId(userId: UUID, subjectId: UUID): List<Task> = taskRepository.findAllByUserIdAndSubjectId(userId, subjectId)
+    fun findAllByUserIdWithSubject(userId: UUID): List<Task> = taskRepository.findAllByUserIdWithSubject(userId)
 
     fun create(task: Task): Task {
         userRepository.findById(task.user.id!!).orElseThrow { IllegalArgumentException("Usuario no encontrado: ${task.user.id}") }
