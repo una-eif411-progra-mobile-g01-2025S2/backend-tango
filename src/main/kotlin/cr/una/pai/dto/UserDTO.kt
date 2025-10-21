@@ -42,3 +42,8 @@ data class UserResult(
     var roles: List<RoleResult> = emptyList(),
     var roleIds: List<UUID> = emptyList() // representación simplificada
 )
+
+data class UserLoginInputSecurity(
+    var email: String = "",
+    var password: String = ""
+)

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.io.Decoders
-import io.jsonwebtoken.security.*
+import io.jsonwebtoken.security.Keys
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -15,22 +15,20 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.AuthenticationException
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.core.userdetails.User
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter
+import cr.una.pai.dto.UserLoginInputSecurity
 import java.io.IOException
 import java.security.Key
 import java.util.*
+import cr.una.pai.dto.UserResult
 
-/**
- * This class will hold the constants used in the security
- */
+// ====================== Constantes ======================
 object SecurityConstants {
-    // JWT token defaults val TOKEN_PREFIX = "Bearer "
     const val TOKEN_TYPE = "JWT"
     const val TOKEN_ISSUER = "secure-api"
     const val TOKEN_AUDIENCE = "secure-app"
-    const val TOKEN_LIFETIME: Long = 864000000
+    const val TOKEN_LIFETIME: Long = 864000000 // 10 días
     const val TOKEN_PREFIX = "Bearer "
     const val APPLICATION_JSON = "application/json"
     const val UTF_8 = "UTF-8"
@@ -39,108 +37,114 @@ object SecurityConstants {
                 "MikeEducation==========================="
 }
 
-/**
- *
- */
+// ====================== Authentication Filter ======================
 class JwtAuthenticationFilter(authenticationManager: AuthenticationManager) : UsernamePasswordAuthenticationFilter() {
 
-    private val authManager: AuthenticationManager
+    private val authManager: AuthenticationManager = authenticationManager
 
     init {
-        setFilterProcessesUrl("/v1/users/login")
-        authManager = authenticationManager
+        setFilterProcessesUrl("/v1/users/login") // URL de login
     }
 
     @Throws(AuthenticationException::class)
     override fun attemptAuthentication(
         request: HttpServletRequest,
-        response: HttpServletResponse,
+        response: HttpServletResponse
     ): Authentication {
 
         if (request.method != "POST") {
-            throw AuthenticationServiceException("Authentication method not supported: $request.method")
+            throw AuthenticationServiceException("Authentication method not supported: ${request.method}")
         }
 
         return try {
-            val userLoginInput: UserLoginInput = ObjectMapper()
-                .readValue(request.inputStream, UserLoginInput::class.java)
-            authManager.authenticate(
-                UsernamePasswordAuthenticationToken(
-                    userLoginInput.username,
-                    userLoginInput.password,
-                    ArrayList()
-                )
+            // Leemos el DTO de login con email y password
+            val userLoginInput = ObjectMapper()
+                .readValue(request.inputStream, UserLoginInputSecurity::class.java)
+
+            val authToken = UsernamePasswordAuthenticationToken(
+                userLoginInput.email,
+                userLoginInput.password,
+                ArrayList() // sin roles todavía, Spring los cargará después si es necesario
             )
-        } catch (exception: IOException) {
-            throw RuntimeException(exception)
+            authManager.authenticate(authToken)
+
+        } catch (ex: IOException) {
+            throw RuntimeException(ex)
         }
     }
 
     override fun successfulAuthentication(
         request: HttpServletRequest, response: HttpServletResponse,
-        filterChain: FilterChain, authentication: Authentication,
+        filterChain: FilterChain, authentication: Authentication
     ) {
 
         val objectMapper = ObjectMapper()
 
+        // Creamos el token JWT
         val token = Jwts.builder()
             .signWith(key(), SignatureAlgorithm.HS512)
             .setHeaderParam("typ", SecurityConstants.TOKEN_TYPE)
             .setIssuer(SecurityConstants.TOKEN_ISSUER)
             .setAudience(SecurityConstants.TOKEN_AUDIENCE)
-            .setSubject((authentication.principal as User).username)
+            .setSubject(authentication.name) // email del usuario
             .setExpiration(Date(System.currentTimeMillis() + SecurityConstants.TOKEN_LIFETIME))
             .compact()
 
+        // Agregamos el token en la cabecera
         response.addHeader(HttpHeaders.AUTHORIZATION, SecurityConstants.TOKEN_PREFIX + token)
-        val out = response.writer
+
+        // También devolvemos el usuario logueado en el body si quieres
+        val principal = UserResult(
+            id = UUID.randomUUID(), // aquí podrías mapear tu User real
+            fullName = authentication.name,
+            email = authentication.name,
+            degree = null,
+            yearOfStudy = null,
+            university = null,
+            roles = emptyList(),
+            roleIds = emptyList()
+        )
+
         response.contentType = SecurityConstants.APPLICATION_JSON
         response.characterEncoding = SecurityConstants.UTF_8
-        out.print(objectMapper.writeValueAsString(authentication.principal))
-        out.flush()
+        response.writer.print(objectMapper.writeValueAsString(principal))
+        response.writer.flush()
     }
 }
 
-/**
- * This function will return the key to sign the token
- */
-private fun key(): Key {
-    return Keys.hmacShaKeyFor(Decoders.BASE64.decode(SecurityConstants.TOKEN_SECRET))
-}
-
-/**
- * This class will validate the token
- */
+// ====================== Authorization Filter ======================
 class JwtAuthorizationFilter(authenticationManager: AuthenticationManager) :
     BasicAuthenticationFilter(authenticationManager) {
 
     @Throws(IOException::class)
     override fun doFilterInternal(
         request: HttpServletRequest, response: HttpServletResponse,
-        filterChain: FilterChain,
+        filterChain: FilterChain
     ) {
 
         var authorizationToken = request.getHeader(HttpHeaders.AUTHORIZATION)
 
         if (authorizationToken != null && authorizationToken.startsWith(SecurityConstants.TOKEN_PREFIX)) {
             authorizationToken = authorizationToken.replaceFirst(SecurityConstants.TOKEN_PREFIX.toRegex(), "")
-            val username: String =
+            val email: String =
                 Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(authorizationToken).body.subject
 
-            LoggedUser.logIn(username)
+            LoggedUser.logIn(email)
 
             SecurityContextHolder.getContext().authentication =
-                UsernamePasswordAuthenticationToken(username, null, emptyList())
+                UsernamePasswordAuthenticationToken(email, null, emptyList())
         }
 
         filterChain.doFilter(request, response)
     }
-
 }
 
-/**
- * Object to holder the user information
- */
+// ====================== Helper para el JWT ======================
+private fun key(): Key {
+    return Keys.hmacShaKeyFor(Decoders.BASE64.decode(SecurityConstants.TOKEN_SECRET))
+}
+
+// ====================== Holder del usuario logueado ======================
 object LoggedUser {
     private val userHolder = ThreadLocal<String>()
     fun logIn(user: String) {
@@ -151,14 +155,7 @@ object LoggedUser {
         userHolder.remove()
     }
 
-    fun get(): String {
+    fun get(): String? {
         return userHolder.get()
     }
 }
-
-
-
-
-
-
-
