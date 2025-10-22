@@ -16,18 +16,22 @@ import java.util.*
 @Transactional
 class AIAdvisorService(
     private val taskService: TaskService,
-    @Value("\${openrouter.api.key}") private val apiKey: String,
-    @Value("\${openrouter.api.url}") private val apiUrl: String,
-    @Value("\${openrouter.model}") private val model: String
+    @Value("\${openrouter.api.key:}") private val apiKey: String,
+    @Value("\${openrouter.api.url:https://openrouter.ai/api/v1/chat/completions}") private val apiUrl: String,
+    @Value("\${openrouter.model:tngtech/deepseek-r1t2-chimera:free}") private val model: String
 ) {
 
-    private val webClient: WebClient = WebClient.builder()
-        .baseUrl(apiUrl)
-        .defaultHeader("Authorization", "Bearer $apiKey")
-        .defaultHeader("Content-Type", "application/json")
-        .defaultHeader("HTTP-Referer", "http://localhost:8080")
-        .defaultHeader("X-Title", "PAI Backend - AI Advisor")
-        .build()
+    private val webClient: WebClient? = if (apiKey.isNotBlank()) {
+        WebClient.builder()
+            .baseUrl(apiUrl)
+            .defaultHeader("Authorization", "Bearer $apiKey")
+            .defaultHeader("Content-Type", "application/json")
+            .defaultHeader("HTTP-Referer", "http://localhost:8080")
+            .defaultHeader("X-Title", "PAI Backend - AI Advisor")
+            .build()
+    } else {
+        null
+    }
 
     fun obtenerConsejosParaUsuario(userId: UUID, customMessage: String? = null): AIAdvisorResponse {
         // Obtener las tareas del usuario (con materia asociada)
@@ -84,7 +88,7 @@ class AIAdvisorService(
                     title = task.title,
                     deadline = task.deadline?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                     priority = task.priority,
-                    subject = task.subject.name,
+                    subject = task.subject?.name ?: "(sin materia)",
                     status = task.status.name
                 )
             })
@@ -96,7 +100,7 @@ class AIAdvisorService(
                         title = task.title,
                         deadline = task.deadline?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                         priority = task.priority,
-                        subject = task.subject.name,
+                        subject = task.subject?.name ?: "(sin materia)",
                         status = task.status.name
                     )
                 })
@@ -138,6 +142,9 @@ class AIAdvisorService(
     }
 
     private fun llamarAPIOpenRouter(contexto: String): String? {
+        if (webClient == null) {
+            return "El servicio de asesoría inteligente está deshabilitado porque la API key de OpenRouter no está configurada. Configura el valor 'OPENROUTER_API_KEY' para activar esta funcionalidad."
+        }
         println("[AIAdvisor] Contexto enviado a IA:\n$contexto")
         return try {
             val requestBody = mapOf(
