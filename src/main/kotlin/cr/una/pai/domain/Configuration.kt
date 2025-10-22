@@ -1,6 +1,6 @@
 package cr.una.pai.domain
 
-import cr.una.pai.domain.AppCustomDsl.Companion.customDsl
+//import cr.una.pai.domain.AppCustomDsl.Companion.customDsl
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -12,7 +12,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
@@ -21,57 +20,48 @@ import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import jakarta.annotation.Resource
 
+// ======================================
+// 🔓 CONFIG LOCAL (sin seguridad JWT)
+// ======================================
 @Profile("initlocal")
 @Configuration
 @EnableWebSecurity
-class OpenSecurityConfiguration{
+class OpenSecurityConfiguration {
 
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
-        http.csrf{
-                it.disable()
-            }
-            .cors{
-                it.disable()
-            }
-            .authorizeHttpRequests {
-                it
-                    .anyRequest().authenticated()
-            }
+        http
+            .csrf { it.disable() }
+            .cors { it.disable() }
+            .authorizeHttpRequests { it.anyRequest().permitAll() }
 
         return http.build()
     }
-
 }
 
+// ======================================
+// 🔐 CONFIG JWT (seguridad activa)
+// ======================================
 @Profile("!initlocal")
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 class JwtSecurityConfiguration {
 
-    @Value("\${url.unsecure}")
-    val URL_UNSECURE: String? = null
-
     @Value("\${url.user.signup}")
-    val URL_SIGNUP: String? = null
+    private val URL_SIGNUP: String? = null
+
+    @Value("\${url.user.login}")
+    private val URL_LOGIN: String? = null
 
     @Resource
     private val userDetailsService: AppUserDetailsService? = null
 
     @Bean
-    @Throws(java.lang.Exception::class)
-    fun authenticationManager(authConfig: AuthenticationConfiguration): AuthenticationManager? {
-        return authConfig.authenticationManager
-    }
+    fun passwordEncoder() = BCryptPasswordEncoder()
 
     @Bean
-    fun passwordEncoder(): BCryptPasswordEncoder? {
-        return BCryptPasswordEncoder()
-    }
-
-    @Bean
-    fun authenticationProvider(): DaoAuthenticationProvider? {
+    fun authenticationProvider(): DaoAuthenticationProvider {
         val authProvider = DaoAuthenticationProvider()
         authProvider.setUserDetailsService(userDetailsService)
         authProvider.setPasswordEncoder(passwordEncoder())
@@ -79,28 +69,8 @@ class JwtSecurityConfiguration {
     }
 
     @Bean
-    fun filterChain(http: HttpSecurity): SecurityFilterChain {
-        http
-            .csrf{
-                it.disable()
-            }
-            .cors{
-                it.configurationSource(corsConfigurationSource())
-            }
-            .authorizeHttpRequests {
-                it
-                    .requestMatchers("/".plus(URL_UNSECURE).plus("/**")).permitAll()
-                    .requestMatchers(HttpMethod.POST, URL_SIGNUP).permitAll()
-                    .requestMatchers("/**").authenticated()
-            }
-            .sessionManagement{
-                it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            }
-            .authenticationProvider(authenticationProvider())
-            .apply(customDsl())
-
-        return http.build()
-    }
+    fun authenticationManager(config: AuthenticationConfiguration): AuthenticationManager =
+        config.authenticationManager
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
@@ -115,22 +85,26 @@ class JwtSecurityConfiguration {
         return source
     }
 
-}
+    @Bean
+    fun filterChain(http: HttpSecurity, authConfig: AuthenticationConfiguration): SecurityFilterChain {
+        val authManager = authenticationManager(authConfig)
 
-class AppCustomDsl : AbstractHttpConfigurer<AppCustomDsl?, HttpSecurity?>() {
-    override fun configure(http: HttpSecurity?) {
-        super.configure(builder)
-        val authenticationManager = http?.getSharedObject(
-            AuthenticationManager::class.java
-        )
+        http
+            .csrf { it.disable() }
+            .cors { it.configurationSource(corsConfigurationSource()) }
+            .authorizeHttpRequests {
+                it
+                    .requestMatchers("/api/v1/users/signup").permitAll()
+                    .requestMatchers("/api/v1/users/login").permitAll()
+                    .requestMatchers("/api/v1/unsecure/**").permitAll()
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    .anyRequest().authenticated()
+            }
+            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            .authenticationProvider(authenticationProvider())
+            .addFilter(JwtAuthenticationFilter(authManager))
+            .addFilter(JwtAuthorizationFilter(authManager))
 
-        http?.addFilter(JwtAuthenticationFilter(authenticationManager!!))
-        http?.addFilter(JwtAuthorizationFilter(authenticationManager!!))
+        return http.build()
     }
-    companion object {
-        fun customDsl(): AppCustomDsl {
-            return AppCustomDsl()
-        }
-    }
-
 }

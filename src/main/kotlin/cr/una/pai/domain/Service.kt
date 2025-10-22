@@ -12,13 +12,12 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional
 class AppUserDetailsService(
-    @Autowired
-    val userRepository: UserRepository,
+    @Autowired private val userRepository: UserRepository
 ) : UserDetailsService {
 
     @Throws(UsernameNotFoundException::class)
     override fun loadUserByUsername(username: String): UserDetails {
-        val user: User = userRepository.findByEmail(username)
+        val user = userRepository.findByEmail(username)
             .orElseThrow { UsernameNotFoundException("Usuario no encontrado: $username") }
 
         val authorities = getAuthoritiesFromUser(user)
@@ -26,7 +25,7 @@ class AppUserDetailsService(
         return org.springframework.security.core.userdetails.User(
             user.email,
             user.password,
-            true, // enabled
+            true,
             true,
             true,
             true,
@@ -39,9 +38,7 @@ class AppUserDetailsService(
             val role = userRole.role
             val authorities = mutableListOf<GrantedAuthority>()
             if (role != null) {
-                // Agrega el rol como autoridad
                 authorities.add(SimpleGrantedAuthority(role.name))
-                // Agrega todos los privilegios del rol
                 authorities.addAll(
                     role.rolePrivileges.mapNotNull { it.privilege?.let { p -> SimpleGrantedAuthority(p.name) } }
                 )
