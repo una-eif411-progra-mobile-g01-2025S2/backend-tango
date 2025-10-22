@@ -42,7 +42,7 @@ dependencies {
 
 	// PostgreSQL Driver
 	implementation("org.postgresql:postgresql:42.7.3")
-	runtimeOnly("org.postgresql:postgresql:42.7.3")
+
 
 	// JWT
 	implementation("io.jsonwebtoken:jjwt-api:0.11.5")
