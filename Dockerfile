@@ -1,44 +1,40 @@
-# syntax=docker/dockerfile:1
+# ===== build stage =====
+FROM eclipse-temurin:21-jdk AS build
+WORKDIR /app
 
-# -------- Build stage --------
-FROM eclipse-temurin:17-jdk-jammy AS build
-WORKDIR /workspace
-
-# Copiamos solo lo necesario para aprovechar la caché de Docker
-COPY gradlew gradlew
-COPY gradle gradle
+# Copiamos wrapper y config primero para cache
+COPY gradlew ./
+COPY gradle ./gradle
 COPY build.gradle.kts settings.gradle.kts ./
-COPY src src
+COPY gradle.properties ./
 
-# Normaliza fin de línea por si el wrapper está en CRLF (Windows) y marca como ejecutable
-RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
+# (nuevo) Más memoria para Gradle/Kotlin daemon en entornos limitados
+ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx1g -Dkotlin.daemon.jvm.options=-Xmx512m"
 
-# Construye el JAR ejecutable (omitimos tests para acelerar la imagen)
-RUN ./gradlew --no-daemon clean bootJar -x test
+RUN chmod +x gradlew
+# (nuevo) Warm-up opcional para descargar dependencias sin fallar el build si falta src
+RUN ./gradlew --no-daemon --stacktrace --info -x test build -x bootJar || true
 
-# -------- Runtime stage --------
-FROM eclipse-temurin:17-jre-jammy AS runtime
+# Copiamos el código después para no invalidar cache de dependencias en cada cambio
+COPY src ./src
 
-ENV APP_HOME=/opt/app
-WORKDIR ${APP_HOME}
+# (clave) build con logs y sin tests
+RUN ./gradlew --no-daemon --stacktrace --info --warning-mode all -x test clean bootJar
 
-# Usuario no-root para ejecutar la app
-RUN useradd -ms /bin/bash appuser
+# ===== run stage =====
+FROM eclipse-temurin:21-jre
+WORKDIR /app
 
-# Copiamos el artefacto construido
-COPY --from=build /workspace/build/libs/app.jar app.jar
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
+# Copia el jar final (match *-SNAPSHOT o release)
+COPY --from=build /app/build/libs/*.jar app.jar
 
-# Copiamos el script de entrada y aseguramos permisos
-COPY entrypoint.sh ./entrypoint.sh
-RUN sed -i 's/\r$//' ./entrypoint.sh && chmod +x ./entrypoint.sh && chown -R appuser:appuser ${APP_HOME}
-USER appuser
-
-# Puerto por defecto local; Render inyecta PORT en runtime
+# Render inyecta $PORT
 ENV PORT=8080
 EXPOSE 8080
 
-# Flags JVM seguros para contenedores
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -Djava.security.egd=file:/dev/./urandom"
+# Healthcheck (Actuator)
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://localhost:8080/actuator/health || exit 1
 
-# Usamos un script simple como entrypoint (evita problemas de quoting en plataformas de despliegue)
-ENTRYPOINT ["/opt/app/entrypoint.sh"]
+# Pasa el puerto al arranque
+ENTRYPOINT ["sh","-c","java $JAVA_OPTS -Dserver.port=$PORT -jar app.jar"]
