@@ -33,7 +33,7 @@ repositories {
 // Dependencias
 // --------------------------------
 dependencies {
-	// MapStruct para mapeo de objetos
+	// MapStruct (Kotlin + kapt)
 	implementation("org.mapstruct:mapstruct:1.6.0")
 	kapt("org.mapstruct:mapstruct-processor:1.6.0")
 
@@ -41,35 +41,15 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
-	implementation("org.springframework.boot:spring-boot-starter-security")
-	implementation("org.springframework.boot:spring-boot-starter-webflux") // WebFlux para WebClient (OpenRouter)
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
-	implementation("org.springframework.boot:spring-boot-starter-jdbc")
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
-
-	// Seguridad y JWT
-	implementation("io.jsonwebtoken:jjwt-api:0.11.5")
-	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
-	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
-	testImplementation("org.springframework.security:spring-security-test")
-
-	// Jackson y Kotlin
+	implementation("org.postgresql:postgresql")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
+	implementation("org.flywaydb:flyway-core:11.14.1")
+	implementation("org.flywaydb:flyway-database-postgresql:11.14.1")
 
-	// Procesadores de configuración
-	kapt("org.springframework.boot:spring-boot-configuration-processor")
-
-	// Base de datos
-	implementation("org.postgresql:postgresql:42.7.3")
-
-	// Migraciones de base de datos (Flyway)
-	implementation("org.flywaydb:flyway-core")
-	implementation("org.flywaydb:flyway-database-postgresql")
-
-	// Librería JSON para IA Service
-	implementation("org.json:json:20231013")
+	// Test
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
 // Configuración de Kapt
@@ -82,7 +62,6 @@ kapt {
 // --------------------------------
 tasks.withType<KotlinCompile> {
 	kotlinOptions {
-		freeCompilerArgs += "-Xjsr305=strict"
 		jvmTarget = "21"
 	}
 }
