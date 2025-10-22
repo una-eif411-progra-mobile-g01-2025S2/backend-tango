@@ -39,6 +39,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-jdbc")
 	implementation("org.springframework.boot:spring-boot-starter-webflux") // Para WebClient
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
 
 	// Flyway para migraciones
 	implementation("org.flywaydb:flyway-core:10.17.0")
