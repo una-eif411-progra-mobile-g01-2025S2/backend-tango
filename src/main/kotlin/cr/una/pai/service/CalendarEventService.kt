@@ -26,7 +26,7 @@ class CalendarEventService(
     // ======== Queries base ========
     fun findAll(): List<CalendarEvent> = calendarEventRepository.findAll()
 
-    // ID de CalendarEvent ahora es Long
+    // ID de CalendarEvent ahora es Long (antes UUID)
     fun findById(id: Long): Optional<CalendarEvent> =
         calendarEventRepository.findById(id)
 
@@ -120,9 +120,10 @@ class CalendarEventService(
     }
 
     fun findResultById(id: Long): CalendarEventResult =
-        calendarEventRepository.findById(id)
-            .map(calendarEventMapper::toResult)
-            .orElseThrow { IllegalArgumentException("Evento no encontrado: $id") }
+        calendarEventMapper.toResult(
+            calendarEventRepository.findById(id)
+                .orElseThrow { IllegalArgumentException("Evento de calendario no encontrado: $id") }
+        )
 
     fun findAllResults(): List<CalendarEventResult> =
         calendarEventRepository.findAll().toResults(calendarEventMapper::toResult)
