@@ -4,8 +4,9 @@ import cr.una.pai.domain.Role
 import cr.una.pai.dto.RoleInput
 import cr.una.pai.dto.RoleResult
 import org.mapstruct.*
+import org.mapstruct.Mapper
 
-@Mapper(config = MapperConfig::class)
+@Mapper(componentModel = "spring", config = MapperConfig::class)
 interface RoleMapper {
     @Mappings(
         Mapping(target = "id", ignore = true),

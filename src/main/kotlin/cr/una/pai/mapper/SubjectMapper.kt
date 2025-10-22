@@ -5,8 +5,9 @@ import cr.una.pai.dto.SubjectInput
 import cr.una.pai.dto.SubjectResult
 import org.mapstruct.*
 import java.util.*
+import org.mapstruct.Mapper
 
-@Mapper(config = MapperConfig::class)
+@Mapper(componentModel = "spring", config = MapperConfig::class)
 abstract class SubjectMapper {
 
     // Crear entidad desde SubjectInput. Se mapean relaciones vía context.

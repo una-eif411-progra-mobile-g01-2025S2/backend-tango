@@ -3,10 +3,14 @@ package cr.una.pai.mapper
 import cr.una.pai.domain.Task
 import cr.una.pai.dto.TaskInput
 import cr.una.pai.dto.TaskResult
-import org.mapstruct.*
+import org.mapstruct.BeanMapping
+import org.mapstruct.Mapper
+import org.mapstruct.Mapping
+import org.mapstruct.Mappings
+import org.mapstruct.Named
 import java.util.*
 
-@Mapper(config = MapperConfig::class)
+@Mapper(componentModel = "spring", config = MapperConfig::class)
 abstract class TaskMapper {
     @Mappings(
         Mapping(target = "id", ignore = true),

@@ -5,8 +5,9 @@ import cr.una.pai.dto.CalendarEventInput
 import cr.una.pai.dto.CalendarEventResult
 import org.mapstruct.*
 import java.util.*
+import org.mapstruct.Mapper
 
-@Mapper(config = MapperConfig::class)
+@Mapper(componentModel = "spring", config = MapperConfig::class)
 abstract class CalendarEventMapper {
     @Mappings(
         Mapping(target = "id", ignore = true),
