@@ -46,7 +46,7 @@ EXPOSE 8080
 
 # Healthcheck a Actuator (asegúrate de tener el starter de actuator)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
-  CMD curl -fsS http://localhost:8080/actuator/health || exit 1
+  CMD ["sh", "-c", "curl -fsS http://localhost:${PORT:-8080}/actuator/health || exit 1"]
 
 # Ejecutar
 ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar /app/app.jar"]

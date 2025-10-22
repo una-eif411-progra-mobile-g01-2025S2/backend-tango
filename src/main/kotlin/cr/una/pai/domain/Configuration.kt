@@ -19,6 +19,8 @@ import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import jakarta.annotation.Resource
+import java.net.URI
+import java.net.URISyntaxException
 
 // ======================================
 // 🔓 CONFIG LOCAL (sin seguridad JWT)
@@ -54,6 +56,10 @@ class JwtSecurityConfiguration {
     @Value("\${url.user.login}")
     private val URL_LOGIN: String? = null
 
+    @Value("\${cors.allowed-origins:http://localhost:3000}")
+    private val corsAllowedOrigins: String? = null
+
+
     @Resource
     private val userDetailsService: AppUserDetailsService? = null
 
@@ -77,7 +83,13 @@ class JwtSecurityConfiguration {
         val source = UrlBasedCorsConfigurationSource()
         val config = CorsConfiguration().apply {
             allowCredentials = true
-            addAllowedOrigin("http://localhost:3000")
+            val origins = corsAllowedOrigins
+                ?.split(",")
+                ?.map { it.trim() }
+                ?.filter { it.isNotEmpty() }
+                ?.ifEmpty { listOf("http://localhost:3000") }
+                ?: listOf("http://localhost:3000")
+            allowedOrigins = origins.toMutableList()
             addAllowedHeader("*")
             addAllowedMethod("*")
         }
@@ -88,14 +100,16 @@ class JwtSecurityConfiguration {
     @Bean
     fun filterChain(http: HttpSecurity, authConfig: AuthenticationConfiguration): SecurityFilterChain {
         val authManager = authenticationManager(authConfig)
+        val publicSignupPath = URL_SIGNUP.toRequestPath("/api/v1/users/signup")
+        val publicLoginPath = URL_LOGIN.toRequestPath("/api/v1/users/login")
 
         http
             .csrf { it.disable() }
             .cors { it.configurationSource(corsConfigurationSource()) }
             .authorizeHttpRequests {
                 it
-                    .requestMatchers("/api/v1/users/signup").permitAll()
-                    .requestMatchers("/api/v1/users/login").permitAll()
+                    .requestMatchers(publicSignupPath).permitAll()
+                    .requestMatchers(publicLoginPath).permitAll()
                     .requestMatchers("/api/v1/unsecure/**").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .anyRequest().authenticated()
@@ -107,4 +121,24 @@ class JwtSecurityConfiguration {
 
         return http.build()
     }
+
+    private fun String?.toRequestPath(defaultPath: String): String {
+        val candidate = this?.takeIf { it.isNotBlank() }?.trim() ?: return defaultPath
+        return try {
+            val uri = URI(candidate)
+            if (uri.scheme.isNullOrBlank()) {
+                ensureLeadingSlash(candidate)
+            } else {
+                val path = uri.path?.takeIf { it.isNotBlank() } ?: "/"
+                ensureLeadingSlash(path)
+            }
+        } catch (_: URISyntaxException) {
+            ensureLeadingSlash(candidate)
+        } catch (_: IllegalArgumentException) {
+            ensureLeadingSlash(candidate)
+        }
+    }
+
+    private fun ensureLeadingSlash(path: String): String =
+        if (path.startsWith("/")) path else "/$path"
 }

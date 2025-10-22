@@ -18,7 +18,8 @@ class AIAdvisorService(
     private val taskService: TaskService,
     @Value("\${openrouter.api.key:}") private val apiKey: String,
     @Value("\${openrouter.api.url:https://openrouter.ai/api/v1/chat/completions}") private val apiUrl: String,
-    @Value("\${openrouter.model:tngtech/deepseek-r1t2-chimera:free}") private val model: String
+    @Value("\${openrouter.model:tngtech/deepseek-r1t2-chimera:free}") private val model: String,
+    @Value("\${app.base-url:http://localhost:8080}") private val appBaseUrl: String
 ) {
 
     private val webClient: WebClient? = if (apiKey.isNotBlank()) {
@@ -26,7 +27,7 @@ class AIAdvisorService(
             .baseUrl(apiUrl)
             .defaultHeader("Authorization", "Bearer $apiKey")
             .defaultHeader("Content-Type", "application/json")
-            .defaultHeader("HTTP-Referer", "http://localhost:8080")
+            .defaultHeader("HTTP-Referer", appBaseUrl)
             .defaultHeader("X-Title", "PAI Backend - AI Advisor")
             .build()
     } else {
