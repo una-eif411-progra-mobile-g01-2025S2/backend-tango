@@ -1,5 +1,5 @@
 # ===== build stage =====
-FROM eclipse-temurin:17-jdk AS build
+FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
 COPY gradlew ./
 RUN chmod +x gradlew
@@ -9,7 +9,7 @@ COPY src src
 RUN ./gradlew clean bootJar --no-daemon
 
 # ===== run stage =====
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
 COPY --from=build /app/build/libs/*-SNAPSHOT.jar app.jar

@@ -23,45 +23,42 @@ repositories {
 }
 
 dependencies {
-	// MapStruct core
-	implementation("org.mapstruct:mapstruct:1.6.0")
+	// MapStruct core (actualizado a 1.6.0)
+	implementation ("org.mapstruct:mapstruct:1.6.0")
+	// Processor para Kotlin via Kapt
 	kapt("org.mapstruct:mapstruct-processor:1.6.0")
-	kapt("org.springframework.boot:spring-boot-configuration-processor")
 
-	// Spring Boot Starters
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-security")
-	implementation("org.springframework.boot:spring-boot-starter-actuator")
-	implementation("org.springframework.boot:spring-boot-starter-jdbc")
-	implementation("org.springframework.boot:spring-boot-starter-webflux") // Para WebClient
-
-	// Flyway para migraciones
-	implementation("org.flywaydb:flyway-core:10.17.0")
-
-	// PostgreSQL Driver
-	implementation("org.postgresql:postgresql:42.7.3")
-	runtimeOnly("org.postgresql:postgresql:42.7.3")
-
-	// JWT
 	implementation("io.jsonwebtoken:jjwt-api:0.11.5")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
-
-	// Jackson para Kotlin
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
+	kapt("org.springframework.boot:spring-boot-configuration-processor")
+	developmentOnly("org.springframework.boot:spring-boot-devtools")
+	testImplementation("org.springframework.security:spring-security-test")
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
 
 	// JSON library para IA Service
 	implementation("org.json:json:20231013")
 
-	// Devtools (solo en desarrollo)
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
+	// WebFlux para WebClient (OpenRouter)
+	implementation("org.springframework.boot:spring-boot-starter-webflux")
 
-	// Tests
+	runtimeOnly("org.postgresql:postgresql")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("org.springframework.security:spring-security-test")
+
+
+
+	implementation("org.flywaydb:flyway-core")
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	implementation("org.springframework.boot:spring-boot-starter-jdbc")
+	implementation("org.postgresql:postgresql:42.7.3")
+	implementation("org.flywaydb:flyway-core:10.17.0")
+
 }
 
 // Configuración Kapt
