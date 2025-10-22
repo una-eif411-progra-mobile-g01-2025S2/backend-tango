@@ -4,10 +4,12 @@ import cr.una.pai.domain.Task
 import cr.una.pai.dto.TaskInput
 import cr.una.pai.dto.TaskResult
 import org.mapstruct.BeanMapping
+import org.mapstruct.Context
 import org.mapstruct.Mapper
 import org.mapstruct.Mapping
 import org.mapstruct.Mappings
 import org.mapstruct.Named
+import org.mapstruct.MappingTarget
 import java.util.*
 
 @Mapper(componentModel = "spring", config = MapperConfig::class)
