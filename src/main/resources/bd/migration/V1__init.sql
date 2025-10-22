@@ -94,38 +94,23 @@ CREATE TABLE IF NOT EXISTS study_block (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
   subject_id UUID NOT NULL REFERENCES subject(id) ON DELETE CASCADE,
-  task_id UUID REFERENCES task(id) ON DELETE SET NULL,
   start_time TIMESTAMP NOT NULL,
   end_time TIMESTAMP NOT NULL,
   status TEXT NOT NULL,
-  CONSTRAINT chk_block_times CHECK (end_time >= start_time),
-  CONSTRAINT chk_block_status CHECK (status IN ('PLANNED','IN_PROGRESS','COMPLETED'))
+  CONSTRAINT chk_study_block_status CHECK (status IN ('PLANNED','IN_PROGRESS','COMPLETED'))
 );
-CREATE INDEX IF NOT EXISTS idx_block_user ON study_block(user_id);
-CREATE INDEX IF NOT EXISTS idx_block_subject ON study_block(subject_id);
-CREATE INDEX IF NOT EXISTS idx_block_task ON study_block(task_id);
+CREATE INDEX IF NOT EXISTS idx_study_block_user ON study_block(user_id);
+CREATE INDEX IF NOT EXISTS idx_study_block_subject ON study_block(subject_id);
 
-CREATE TABLE IF NOT EXISTS weekly_availability (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
-  day_of_week TEXT NOT NULL,
-  start_time TIME NOT NULL,
-  end_time TIME NOT NULL,
-  CONSTRAINT chk_availability_day CHECK (day_of_week IN ('MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY')),
-  CONSTRAINT chk_availability_times CHECK (end_time > start_time)
-);
-CREATE INDEX IF NOT EXISTS idx_availability_user ON weekly_availability(user_id);
-
--- ========= Calendar sync =========
 CREATE TABLE IF NOT EXISTS calendar_event (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
-  study_block_id UUID UNIQUE REFERENCES study_block(id) ON DELETE CASCADE,
   provider TEXT NOT NULL,
-  external_event_id TEXT,
-  last_sync_at TIMESTAMP,
+  event_id TEXT NOT NULL,
   status TEXT NOT NULL,
-  CONSTRAINT chk_calendar_provider CHECK (provider IN ('GOOGLE')),
-  CONSTRAINT chk_calendar_status CHECK (status IN ('CREATED','UPDATED','DELETED'))
+  title TEXT,
+  start_time TIMESTAMP,
+  end_time TIMESTAMP,
+  CONSTRAINT chk_event_status CHECK (status IN ('CREATED','UPDATED','DELETED'))
 );
-CREATE INDEX IF NOT EXISTS idx_calendar_user ON calendar_event(user_id);
+CREATE INDEX IF NOT EXISTS idx_calendar_event_user ON calendar_event(user_id);

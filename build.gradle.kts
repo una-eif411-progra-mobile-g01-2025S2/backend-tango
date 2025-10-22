@@ -2,20 +2,23 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
 	id("org.springframework.boot") version "3.2.5"
-	id("io.spring.dependency-management") version "1.1.5"
-	kotlin("jvm") version "1.9.25"
+	id("io.spring.dependency-management") version "1.1.4"
+	kotlin("jvm") version "1.9.24"
 	kotlin("plugin.spring") version "1.9.25"
 	kotlin("plugin.jpa") version "1.9.25"
-	kotlin("kapt") version "1.9.25"
+	kotlin("kapt") version "1.9.24"
 }
 
 group = "backend-tango"
 version = "0.0.1-SNAPSHOT"
 
 java {
-	toolchain {
-		languageVersion.set(JavaLanguageVersion.of(17))
-	}
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
+}
+
+kotlin {
+	jvmToolchain(17)
 }
 
 repositories {
@@ -23,42 +26,50 @@ repositories {
 }
 
 dependencies {
-	// MapStruct core (actualizado a 1.6.0)
-	implementation ("org.mapstruct:mapstruct:1.6.0")
-	// Processor para Kotlin via Kapt
+	// MapStruct core
+	implementation("org.mapstruct:mapstruct:1.6.0")
 	kapt("org.mapstruct:mapstruct-processor:1.6.0")
+	kapt("org.springframework.boot:spring-boot-configuration-processor")
 
+	// Spring Boot Starters
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	implementation("org.springframework.boot:spring-boot-starter-jdbc")
+	implementation("org.springframework.boot:spring-boot-starter-webflux") // Para WebClient
+
+	// Flyway para migraciones
+	implementation("org.flywaydb:flyway-core:10.17.0")
+	implementation("org.flywaydb:flyway-database-postgresql:10.17.0")
+
+	// Driver Postgres actualizado
+	runtimeOnly("org.postgresql:postgresql:42.7.4")
+
+
+	// PostgreSQL Driver
+	//implementation("org.postgresql:postgresql:42.7.3")
+
+
+	// JWT
 	implementation("io.jsonwebtoken:jjwt-api:0.11.5")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
+
+	// Jackson para Kotlin
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
-	kapt("org.springframework.boot:spring-boot-configuration-processor")
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
-	testImplementation("org.springframework.security:spring-security-test")
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
 
 	// JSON library para IA Service
 	implementation("org.json:json:20231013")
 
-	// WebFlux para WebClient (OpenRouter)
-	implementation("org.springframework.boot:spring-boot-starter-webflux")
+	// Devtools (solo en desarrollo)
+	developmentOnly("org.springframework.boot:spring-boot-devtools")
 
-	runtimeOnly("org.postgresql:postgresql")
+	// Tests
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
-
-
-
-	implementation("org.flywaydb:flyway-core")
-	implementation("org.springframework.boot:spring-boot-starter-actuator")
-	implementation("org.springframework.boot:spring-boot-starter-jdbc")
-	implementation("org.postgresql:postgresql:42.7.3")
-	implementation("org.flywaydb:flyway-core:10.17.0")
-
+	testImplementation("org.springframework.security:spring-security-test")
 }
 
 // Configuración Kapt
