@@ -112,6 +112,7 @@ class JwtSecurityConfiguration {
                     .requestMatchers(publicLoginPath).permitAll()
                     .requestMatchers("/api/v1/unsecure/**").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    .requestMatchers("/").permitAll() // Permitir acceso público al endpoint raíz
                     .anyRequest().authenticated()
             }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
