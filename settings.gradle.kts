@@ -6,9 +6,10 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS) // o FAIL_ON_PROJECT_REPOS
     repositories {
         mavenCentral()
+        // (opcional) maven("https://repo.spring.io/release")
     }
 }
 
