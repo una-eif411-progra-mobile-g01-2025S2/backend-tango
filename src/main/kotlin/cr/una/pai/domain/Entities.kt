@@ -39,10 +39,14 @@ class User(
 )
 
 @Embeddable
-class UserRoleId(
+data class UserRoleId(
+    @Column(name = "user_id")
     var userId: UUID? = null,
+    @Column(name = "role_id")
     var roleId: UUID? = null
 ) : Serializable
+
+
 
 @Entity
 @Table(
@@ -81,8 +85,10 @@ class Role(
 
 
 @Embeddable
-class RolePrivilegeId(
+data class RolePrivilegeId(
+    @Column(name = "role_id")
     var roleId: UUID? = null,
+    @Column(name = "privilege_id")
     var privilegeId: UUID? = null
 ) : Serializable
 
