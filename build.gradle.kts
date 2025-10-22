@@ -50,6 +50,15 @@ dependencies {
 
 	runtimeOnly("org.postgresql:postgresql")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+
+
+
+	implementation("org.flywaydb:flyway-core")
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	implementation("org.springframework.boot:spring-boot-starter-jdbc")
+	implementation("org.postgresql:postgresql:42.7.3")
+	implementation("org.flywaydb:flyway-core:10.17.0")
+
 }
 
 // Configuración Kapt
