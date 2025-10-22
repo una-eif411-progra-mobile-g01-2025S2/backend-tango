@@ -81,7 +81,7 @@ interface WeeklyAvailabilityRepository : JpaRepository<WeeklyAvailability, UUID>
     fun findAllByUserId(userId: UUID): List<WeeklyAvailability>
 }
 
-interface CalendarEventRepository : JpaRepository<CalendarEvent, UUID> {
+interface CalendarEventRepository : JpaRepository<CalendarEvent, Long> {
     fun findByExternalEventId(externalEventId: String): Optional<CalendarEvent>
     fun findByStudyBlockId(studyBlockId: UUID): Optional<CalendarEvent>
     fun findAllByProvider(provider: CalendarProvider): List<CalendarEvent>

@@ -46,7 +46,7 @@ dependencies {
 
 
 	// PostgreSQL Driver
-	implementation("org.postgresql:postgresql:42.7.3")
+	//implementation("org.postgresql:postgresql:42.7.3")
 
 
 	// JWT
