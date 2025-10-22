@@ -40,7 +40,10 @@ dependencies {
 	// Flyway para migraciones
 	implementation("org.flywaydb:flyway-core:10.17.0")
 	implementation("org.flywaydb:flyway-database-postgresql:10.17.0")
+
+	// Driver Postgres actualizado
 	runtimeOnly("org.postgresql:postgresql:42.7.4")
+
 
 	// PostgreSQL Driver
 	implementation("org.postgresql:postgresql:42.7.3")
