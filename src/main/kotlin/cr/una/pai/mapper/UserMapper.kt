@@ -5,7 +5,7 @@ import cr.una.pai.dto.*
 import org.mapstruct.*
 import java.util.*
 
-@Mapper(componentModel = "spring", config = MapperConfig::class)
+@Mapper(config = MapperConfig::class)
 abstract class UserMapper {
 
     // ====== Input -> Entity ======

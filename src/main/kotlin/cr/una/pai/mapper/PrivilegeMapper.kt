@@ -4,9 +4,8 @@ import cr.una.pai.domain.Privilege
 import cr.una.pai.dto.PrivilegeInput
 import cr.una.pai.dto.PrivilegeResult
 import org.mapstruct.*
-import org.mapstruct.Mapper
 
-@Mapper(componentModel = "spring", config = MapperConfig::class)
+@Mapper(config = MapperConfig::class)
 interface PrivilegeMapper {
     @Mappings(
         Mapping(source = "name", target = "name"),

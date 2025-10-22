@@ -5,9 +5,8 @@ import cr.una.pai.dto.WeeklyAvailabilityInput
 import cr.una.pai.dto.WeeklyAvailabilityResult
 import org.mapstruct.*
 import java.util.*
-import org.mapstruct.Mapper
 
-@Mapper(componentModel = "spring", config = MapperConfig::class)
+@Mapper(config = MapperConfig::class)
 abstract class WeeklyAvailabilityMapper {
     @Mappings(
         Mapping(target = "id", ignore = true),

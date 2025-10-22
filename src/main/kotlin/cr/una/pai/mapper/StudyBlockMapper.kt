@@ -5,9 +5,8 @@ import cr.una.pai.dto.StudyBlockInput
 import cr.una.pai.dto.StudyBlockResult
 import org.mapstruct.*
 import java.util.*
-import org.mapstruct.Mapper
 
-@Mapper(componentModel = "spring", config = MapperConfig::class)
+@Mapper(config = MapperConfig::class)
 abstract class StudyBlockMapper {
     @Mappings(
         Mapping(target = "id", ignore = true),

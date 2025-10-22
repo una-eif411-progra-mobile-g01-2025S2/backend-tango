@@ -4,9 +4,8 @@ import cr.una.pai.domain.AcademicPeriod
 import cr.una.pai.dto.AcademicPeriodInput
 import cr.una.pai.dto.AcademicPeriodResult
 import org.mapstruct.*
-import org.mapstruct.Mapper
 
-@Mapper(componentModel = "spring", config = MapperConfig::class)
+@Mapper(config = MapperConfig::class)
 abstract class AcademicPeriodMapper {
     @Mappings(
         Mapping(target = "id", ignore = true),
