@@ -111,6 +111,7 @@ class JwtSecurityConfiguration {
                     .requestMatchers(publicSignupPath).permitAll()
                     .requestMatchers(publicLoginPath).permitAll()
                     .requestMatchers("/api/v1/unsecure/**").permitAll()
+                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers("/").permitAll() // Permitir acceso público al endpoint raíz
                     .anyRequest().authenticated()
