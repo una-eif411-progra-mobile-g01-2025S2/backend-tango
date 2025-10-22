@@ -9,12 +9,12 @@ plugins {
 	kotlin("kapt") version "1.9.25"
 }
 
-group = "backend-tango"
+group = "cr.una.pai"
 version = "0.0.1-SNAPSHOT"
 
 java {
 	toolchain {
-		languageVersion.set(JavaLanguageVersion.of(17))
+		languageVersion.set(JavaLanguageVersion.of(21))
 	}
 }
 
@@ -24,8 +24,7 @@ repositories {
 
 dependencies {
 	// MapStruct core (actualizado a 1.6.0)
-	implementation ("org.mapstruct:mapstruct:1.6.0")
-	// Processor para Kotlin via Kapt
+	implementation("org.mapstruct:mapstruct:1.6.0")
 	kapt("org.mapstruct:mapstruct-processor:1.6.0")
 
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -48,17 +47,10 @@ dependencies {
 	// WebFlux para WebClient (OpenRouter)
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
 
-	runtimeOnly("org.postgresql:postgresql")
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
-
-
-
-	implementation("org.flywaydb:flyway-core")
+	implementation("org.flywaydb:flyway-core:10.17.0")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-jdbc")
 	implementation("org.postgresql:postgresql:42.7.3")
-	implementation("org.flywaydb:flyway-core:10.17.0")
-
 }
 
 // Configuración Kapt
@@ -69,7 +61,7 @@ kapt {
 tasks.withType<KotlinCompile> {
 	kotlinOptions {
 		freeCompilerArgs += "-Xjsr305=strict"
-		jvmTarget = "17"
+		jvmTarget = "21"
 	}
 }
 
