@@ -64,17 +64,8 @@ LIMIT 1;
 
 -- Create a sample task for that subject
 INSERT INTO task (id, user_id, subject_id, title, description, priority, status)
-SELECT uuid_generate_v4(), u.id, s.id,
-       'Tarea 1: Lista enlazada',
-       'Implementar lista enlazada genérica y pruebas.',
-       3, 'PENDING'
+SELECT uuid_generate_v4(), u.id, s.id, 'Proyecto Final', 'Implementa una app web', 3, 'PENDING'
 FROM app_user u
-JOIN subject s ON s.user_id = u.id
+JOIN subject s ON u.id = s.user_id
 WHERE u.email = 'user@pai.local'
 LIMIT 1;
-
--- Weekly availability for the test user
-INSERT INTO weekly_availability (id, user_id, day_of_week, start_time, end_time)
-SELECT uuid_generate_v4(), u.id, 'MONDAY', TIME '18:00', TIME '21:00' FROM app_user u WHERE u.email = 'user@pai.local'
-UNION ALL
-SELECT uuid_generate_v4(), u.id, 'WEDNESDAY', TIME '18:00', TIME '21:00' FROM app_user u WHERE u.email = 'user@pai.local';
