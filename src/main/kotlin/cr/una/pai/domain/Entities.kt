@@ -269,6 +269,8 @@ class CalendarEvent(
     var provider: CalendarProvider = CalendarProvider.GOOGLE,
 
     var externalEventId: String? = null,
+    
+    @Column(name = "last_sync_at")
     var lastSyncAt: LocalDateTime? = null,
 
     @Enumerated(EnumType.STRING)
