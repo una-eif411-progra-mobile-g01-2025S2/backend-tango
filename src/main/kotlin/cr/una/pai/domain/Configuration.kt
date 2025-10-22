@@ -1,11 +1,14 @@
 package cr.una.pai.domain
 
 //import cr.una.pai.domain.AppCustomDsl.Companion.customDsl
+import cr.una.pai.security.JwtAuthFilter
+import jakarta.annotation.Resource
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
@@ -14,11 +17,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.HttpStatusEntryPoint
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
-import jakarta.annotation.Resource
 import java.net.URI
 import java.net.URISyntaxException
 
@@ -53,18 +58,37 @@ class JwtSecurityConfiguration {
     @Value("\${url.user.signup}")
     private val URL_SIGNUP: String? = null
 
-    @Value("\${url.user.login}")
-    private val URL_LOGIN: String? = null
-
     @Value("\${cors.allowed-origins:http://localhost:3000}")
     private val corsAllowedOrigins: String? = null
+
+    @Value("\${api.endpoints.auth:/api/v1/auth}")
+    private val AUTH_BASE: String? = null
 
 
     @Resource
     private val userDetailsService: AppUserDetailsService? = null
 
     @Bean
-    fun passwordEncoder() = BCryptPasswordEncoder()
+    fun passwordEncoder(): PasswordEncoder = object : PasswordEncoder {
+        private val delegate = BCryptPasswordEncoder()
+
+        override fun encode(rawPassword: CharSequence?): String {
+            val candidate = rawPassword?.toString() ?: return ""
+            return delegate.encode(candidate)
+        }
+
+        override fun matches(rawPassword: CharSequence?, encodedPassword: String?): Boolean {
+            if (encodedPassword.isNullOrEmpty()) {
+                return false
+            }
+            val candidate = rawPassword?.toString() ?: return false
+            return if (encodedPassword.startsWith("$2a$") || encodedPassword.startsWith("$2b$") || encodedPassword.startsWith("$2y$")) {
+                delegate.matches(candidate, encodedPassword)
+            } else {
+                encodedPassword == candidate
+            }
+        }
+    }
 
     @Bean
     fun authenticationProvider(): DaoAuthenticationProvider {
@@ -98,11 +122,12 @@ class JwtSecurityConfiguration {
     }
 
     @Bean
-    fun filterChain(http: HttpSecurity, authConfig: AuthenticationConfiguration): SecurityFilterChain {
-        val authManager = authenticationManager(authConfig)
+    fun filterChain(
+        http: HttpSecurity,
+        jwtAuthFilter: JwtAuthFilter
+    ): SecurityFilterChain {
         val publicSignupPath = URL_SIGNUP.toRequestPath("/api/v1/users/signup")
-        val publicLoginPath = URL_LOGIN.toRequestPath("/api/v1/users/login")
-
+        val authBasePath = AUTH_BASE.toRequestPath("/api/v1/auth")
 
         http
             .csrf { it.disable() }
@@ -110,17 +135,17 @@ class JwtSecurityConfiguration {
             .authorizeHttpRequests {
                 it
                     .requestMatchers(publicSignupPath).permitAll()
-                    .requestMatchers(publicLoginPath).permitAll()
+                    .requestMatchers("$authBasePath/login", "$authBasePath/refresh", "$authBasePath/logout").permitAll()
                     .requestMatchers("/api/v1/unsecure/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/webjars/**").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers("/").permitAll() // Permitir acceso público al endpoint raíz
-                    .anyRequest().permitAll()
+                    .anyRequest().authenticated()
             }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authenticationProvider(authenticationProvider())
-            .addFilter(JwtAuthenticationFilter(authManager))
-            .addFilter(JwtAuthorizationFilter(authManager))
+            .exceptionHandling { it.authenticationEntryPoint(HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)) }
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()
     }

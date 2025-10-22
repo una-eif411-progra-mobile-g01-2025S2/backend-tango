@@ -38,6 +38,11 @@ interface RolePrivilegeRepository : JpaRepository<RolePrivilege, RolePrivilegeId
     fun findRolePrivilegesWithPrivilegeByRoleId(@Param("roleId") roleId: UUID): List<RolePrivilege>
 }
 
+interface RefreshTokenRepository : JpaRepository<RefreshToken, UUID> {
+    fun findByTokenHash(tokenHash: String): Optional<RefreshToken>
+    fun findAllByUserIdAndRevokedFalse(userId: UUID): List<RefreshToken>
+}
+
 /* =========================
    Académico
    ========================= */
