@@ -103,6 +103,7 @@ class JwtSecurityConfiguration {
         val publicSignupPath = URL_SIGNUP.toRequestPath("/api/v1/users/signup")
         val publicLoginPath = URL_LOGIN.toRequestPath("/api/v1/users/login")
 
+
         http
             .csrf { it.disable() }
             .cors { it.configurationSource(corsConfigurationSource()) }
@@ -111,10 +112,10 @@ class JwtSecurityConfiguration {
                     .requestMatchers(publicSignupPath).permitAll()
                     .requestMatchers(publicLoginPath).permitAll()
                     .requestMatchers("/api/v1/unsecure/**").permitAll()
-                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/webjars/**").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers("/").permitAll() // Permitir acceso público al endpoint raíz
-                    .anyRequest().authenticated()
+                    .anyRequest().permitAll()
             }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authenticationProvider(authenticationProvider())
