@@ -39,11 +39,9 @@ class User(
 )
 
 @Embeddable
-data class UserRoleId(
-    @Column(name = "user_id")
-    val userId: Long = 0,
-    @Column(name = "role_id")
-    val roleId: Long = 0
+class UserRoleId(
+    var userId: UUID? = null,
+    var roleId: UUID? = null
 ) : Serializable
 
 @Entity
@@ -83,11 +81,9 @@ class Role(
 
 
 @Embeddable
-data class RolePrivilegeId(
-    @Column(name = "role_id")
-    val roleId: Long = 0,
-    @Column(name = "privilege_id")
-    val privilegeId: Long = 0
+class RolePrivilegeId(
+    var roleId: UUID? = null,
+    var privilegeId: UUID? = null
 ) : Serializable
 
 @Entity

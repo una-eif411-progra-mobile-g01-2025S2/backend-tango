@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*
 import java.util.*
 
 @RestController
-@RequestMapping("\${api.endpoints.calendar}", produces = ["application/json"])
+@RequestMapping("\${api.endpoints.calendar}")
 @CrossOrigin(origins = ["\${spring.web.cors.allowed-origins}"])
 @Validated
 class CalendarEventController(
@@ -26,9 +26,9 @@ class CalendarEventController(
         ResponseEntity.ok(calendarEventService.findAllResults())
 
     @GetMapping("/{id}")
-    fun getCalendarEventById(@PathVariable id: Long): ResponseEntity<CalendarEventResult> =
-        try { ResponseEntity.ok(calendarEventService.findResultById(id)) }
-        catch (e: IllegalArgumentException) { ResponseEntity.notFound().build() }
+    fun getCalendarEventById(@PathVariable id: UUID): ResponseEntity<CalendarEventResult> = try {
+        ResponseEntity.ok(calendarEventService.findResultById(id))
+    } catch (e: IllegalArgumentException) { ResponseEntity.notFound().build() }
 
     @GetMapping("/external/{externalEventId}")
     fun getCalendarEventByExternalId(@PathVariable externalEventId: String): ResponseEntity<CalendarEventResult> =
@@ -46,42 +46,38 @@ class CalendarEventController(
     fun getCalendarEventsByProvider(@PathVariable provider: CalendarProvider): ResponseEntity<List<CalendarEventResult>> =
         ResponseEntity.ok(calendarEventService.findAllByProvider(provider).map(calendarEventMapper::toResult))
 
-    @PostMapping(consumes = ["application/json"])
-    fun createCalendarEvent(@Valid @RequestBody input: CalendarEventInput): ResponseEntity<Any> =
-        try {
-            val created = calendarEventService.create(input)
-            ResponseEntity.status(HttpStatus.CREATED).body(created)
-        } catch (e: IllegalArgumentException) {
-            badRequest(e)
-        }
+    @PostMapping
+    fun createCalendarEvent(@Valid @RequestBody input: CalendarEventInput): ResponseEntity<Any> = try {
+        val created = calendarEventService.create(input)
+        ResponseEntity.status(HttpStatus.CREATED).body(created)
+    } catch (e: IllegalArgumentException) {
+        ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
+    }
 
-    @PutMapping("/{id}", consumes = ["application/json"])
-    fun updateCalendarEvent(@PathVariable id: Long, @Valid @RequestBody input: CalendarEventInput): ResponseEntity<Any> =
-        try {
-            val updated = calendarEventService.updateDto(id, input)
-            ResponseEntity.ok(updated)
-        } catch (e: IllegalArgumentException) {
-            badRequest(e)
-        }
+    @PutMapping("/{id}")
+    fun updateCalendarEvent(
+        @PathVariable id: UUID,
+        @Valid @RequestBody input: CalendarEventInput
+    ): ResponseEntity<Any> = try {
+        val updated = calendarEventService.updateDto(id, input)
+        ResponseEntity.ok(updated)
+    } catch (e: IllegalArgumentException) {
+        ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
+    }
 
     @PostMapping("/{id}/sync")
-    fun syncCalendarEvent(@PathVariable id: Long): ResponseEntity<Any> =
-        try {
-            val synced = calendarEventMapper.toResult(calendarEventService.syncEvent(id))
-            ResponseEntity.ok(synced)
-        } catch (e: IllegalArgumentException) {
-            badRequest(e)
-        }
+    fun syncCalendarEvent(@PathVariable id: UUID): ResponseEntity<Any> = try {
+        val synced = calendarEventMapper.toResult(calendarEventService.syncEvent(id))
+        ResponseEntity.ok(synced)
+    } catch (e: IllegalArgumentException) {
+        ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
+    }
 
     @DeleteMapping("/{id}")
-    fun deleteCalendarEvent(@PathVariable id: Long): ResponseEntity<Any> =
-        try {
-            calendarEventService.delete(id)
-            ResponseEntity.noContent().build()
-        } catch (e: IllegalArgumentException) {
-            badRequest(e)
-        }
-
-    private fun badRequest(e: IllegalArgumentException): ResponseEntity<Any> =
+    fun deleteCalendarEvent(@PathVariable id: UUID): ResponseEntity<Any> = try {
+        calendarEventService.delete(id)
+        ResponseEntity.noContent().build()
+    } catch (e: IllegalArgumentException) {
         ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
+    }
 }
