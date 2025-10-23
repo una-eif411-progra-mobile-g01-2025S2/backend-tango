@@ -27,10 +27,20 @@ class JwtService(
     }
 
     fun generateAccessToken(user: User, primaryRole: String?): String =
-        generateToken(user = user, role = primaryRole, tokenType = properties.accessTokenType, ttlSeconds = properties.accessTokenTtl.seconds)
+        generateToken(
+            user = user,
+            role = primaryRole,
+            tokenType = properties.accessTokenType,
+            ttlSeconds = properties.accessTokenTtl.toSeconds()
+        )
 
     fun generateRefreshToken(user: User): String =
-        generateToken(user = user, role = null, tokenType = properties.refreshTokenType, ttlSeconds = properties.refreshTokenTtl.seconds)
+        generateToken(
+            user = user,
+            role = null,
+            tokenType = properties.refreshTokenType,
+            ttlSeconds = properties.refreshTokenTtl.toSeconds()
+        )
 
     private fun generateToken(user: User, role: String?, tokenType: String, ttlSeconds: Long): String {
         val userId = requireNotNull(user.id) { "User must have an id to issue tokens" }
@@ -63,5 +73,7 @@ class JwtService(
 
     fun refreshTokenType(): String = properties.refreshTokenType
 
-    fun refreshTokenTtl(): Long = properties.refreshTokenTtl.seconds
+    fun refreshTokenTtl(): Long = properties.refreshTokenTtl.toSeconds()
+
+    fun accessTokenTtl(): Long = properties.accessTokenTtl.toSeconds()
 }

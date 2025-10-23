@@ -25,12 +25,20 @@ class AuthController(
 ) {
 
     @PostMapping("/login")
-    fun login(@Valid @RequestBody request: LoginRequest): ResponseEntity<AuthTokensResponse> =
-        ResponseEntity.ok(authService.login(request))
+    fun login(@Valid @RequestBody request: LoginRequest): ResponseEntity<AuthTokensResponse> {
+        val tokens = authService.login(request)
+        return ResponseEntity.ok()
+            .header(REFRESH_TOKEN_HEADER, tokens.refreshToken)
+            .body(tokens)
+    }
 
     @PostMapping("/refresh")
-    fun refresh(@Valid @RequestBody request: RefreshTokenRequest): ResponseEntity<AuthTokensResponse> =
-        ResponseEntity.ok(authService.refresh(request))
+    fun refresh(@Valid @RequestBody request: RefreshTokenRequest): ResponseEntity<AuthTokensResponse> {
+        val tokens = authService.refresh(request)
+        return ResponseEntity.ok()
+            .header(REFRESH_TOKEN_HEADER, tokens.refreshToken)
+            .body(tokens)
+    }
 
     @PostMapping("/logout")
     fun logout(@Valid @RequestBody request: RefreshTokenRequest): ResponseEntity<Void> {
@@ -46,3 +54,5 @@ class AuthController(
     fun handleInvalidRefresh(ex: InvalidRefreshTokenException): ResponseEntity<Map<String, String?>> =
         ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(mapOf("error" to ex.message))
 }
+
+private const val REFRESH_TOKEN_HEADER = "X-Refresh-Token"
