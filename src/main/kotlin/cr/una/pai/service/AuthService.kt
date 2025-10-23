@@ -7,9 +7,7 @@ import cr.una.pai.dto.AuthTokensResponse
 import cr.una.pai.dto.LoginRequest
 import cr.una.pai.dto.RefreshTokenRequest
 import cr.una.pai.security.JwtService
-import org.springframework.security.authentication.AuthenticationManager
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.core.AuthenticationException
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.security.MessageDigest
@@ -19,24 +17,26 @@ import java.util.UUID
 
 @Service
 class AuthService(
-    private val authenticationManager: AuthenticationManager,
     private val userRepository: UserRepository,
     private val refreshTokenRepository: RefreshTokenRepository,
-    private val jwtService: JwtService
+    private val jwtService: JwtService,
+    private val passwordEncoder: PasswordEncoder
 ) {
 
     @Transactional
     fun login(request: LoginRequest): AuthTokensResponse {
         val email = request.email.trim().lowercase()
-        val authentication = UsernamePasswordAuthenticationToken(email, request.password)
-        try {
-            authenticationManager.authenticate(authentication)
-        } catch (ex: AuthenticationException) {
-            throw InvalidCredentialsException("Credenciales inválidas", ex)
-        }
-
         val user = userRepository.findByEmail(email)
             .orElseThrow { InvalidCredentialsException("Credenciales inválidas") }
+
+        val rawPassword = request.password
+        val storedPassword = user.password
+        val passwordMatches = storedPassword.isNotBlank() &&
+            passwordEncoder.matches(rawPassword, storedPassword)
+
+        if (!passwordMatches) {
+            throw InvalidCredentialsException("Credenciales inválidas")
+        }
 
         val primaryRole = user.userRoles.mapNotNull { it.role?.name }.firstOrNull()
         revokeActiveRefreshTokens(user.id!!)
