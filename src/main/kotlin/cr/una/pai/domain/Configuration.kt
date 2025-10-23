@@ -127,7 +127,7 @@ class JwtSecurityConfiguration {
         jwtAuthFilter: JwtAuthFilter
     ): SecurityFilterChain {
         val publicSignupPath = URL_SIGNUP.toRequestPath("/api/v1/users/signup")
-        val authBasePath = AUTH_BASE.toRequestPath("/api/v1/auth")
+        val authBasePath = AUTH_BASE.toRequestPath("/api/v1/auth").removeSuffix("/")
 
         http
             .csrf { it.disable() }
@@ -135,7 +135,11 @@ class JwtSecurityConfiguration {
             .authorizeHttpRequests {
                 it
                     .requestMatchers(publicSignupPath).permitAll()
-                    .requestMatchers("$authBasePath/login", "$authBasePath/refresh", "$authBasePath/logout").permitAll()
+                    .requestMatchers(
+                        "${authBasePath.ensureLeadingSlash()}/login",
+                        "${authBasePath.ensureLeadingSlash()}/refresh",
+                        "${authBasePath.ensureLeadingSlash()}/logout"
+                    ).permitAll()
                     .requestMatchers("/api/v1/unsecure/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/webjars/**").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -155,18 +159,18 @@ class JwtSecurityConfiguration {
         return try {
             val uri = URI(candidate)
             if (uri.scheme.isNullOrBlank()) {
-                ensureLeadingSlash(candidate)
+                candidate.ensureLeadingSlash()
             } else {
                 val path = uri.path?.takeIf { it.isNotBlank() } ?: "/"
-                ensureLeadingSlash(path)
+                path.ensureLeadingSlash()
             }
         } catch (_: URISyntaxException) {
-            ensureLeadingSlash(candidate)
+            candidate.ensureLeadingSlash()
         } catch (_: IllegalArgumentException) {
-            ensureLeadingSlash(candidate)
+            candidate.ensureLeadingSlash()
         }
     }
 
-    private fun ensureLeadingSlash(path: String): String =
-        if (path.startsWith("/")) path else "/$path"
+    private fun String.ensureLeadingSlash(): String =
+        if (startsWith("/")) this else "/$this"
 }
