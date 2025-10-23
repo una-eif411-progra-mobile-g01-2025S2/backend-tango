@@ -27,14 +27,15 @@ class AuthService(
 
     @Transactional
     fun login(request: LoginRequest): AuthTokensResponse {
-        val authentication = UsernamePasswordAuthenticationToken(request.email, request.password)
+        val email = request.email.trim().lowercase()
+        val authentication = UsernamePasswordAuthenticationToken(email, request.password)
         try {
             authenticationManager.authenticate(authentication)
         } catch (ex: AuthenticationException) {
             throw InvalidCredentialsException("Credenciales inválidas", ex)
         }
 
-        val user = userRepository.findByEmail(request.email)
+        val user = userRepository.findByEmail(email)
             .orElseThrow { InvalidCredentialsException("Credenciales inválidas") }
 
         val primaryRole = user.userRoles.mapNotNull { it.role?.name }.firstOrNull()
