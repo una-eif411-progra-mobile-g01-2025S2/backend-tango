@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.bind.DefaultValue
 import java.time.Duration
 
-@ConfigurationProperties(prefix = "security.jwt")
+@ConfigurationProperties(prefix = "app.jwt")
 data class JwtProperties(
     val secret: String,
     val issuer: String,

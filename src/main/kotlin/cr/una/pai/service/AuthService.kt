@@ -44,7 +44,12 @@ class AuthService(
         val refreshToken = jwtService.generateRefreshToken(user)
         persistRefreshToken(user.id!!, refreshToken)
 
-        return AuthTokensResponse(accessToken = accessToken, refreshToken = refreshToken)
+        return AuthTokensResponse(
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+            accessTokenExpiresIn = jwtService.accessTokenTtl(),
+            refreshTokenExpiresIn = jwtService.refreshTokenTtl()
+        )
     }
 
     @Transactional
@@ -81,7 +86,12 @@ class AuthService(
         val newRefreshToken = jwtService.generateRefreshToken(user)
         persistRefreshToken(userId, newRefreshToken)
 
-        return AuthTokensResponse(accessToken = accessToken, refreshToken = newRefreshToken)
+        return AuthTokensResponse(
+            accessToken = accessToken,
+            refreshToken = newRefreshToken,
+            accessTokenExpiresIn = jwtService.accessTokenTtl(),
+            refreshTokenExpiresIn = jwtService.refreshTokenTtl()
+        )
     }
 
     @Transactional
