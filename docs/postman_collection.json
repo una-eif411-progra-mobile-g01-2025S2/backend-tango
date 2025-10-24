@@ -1,0 +1,273 @@
+{
+  "info": {
+    "_postman_id": "backend-tango-collection",
+    "name": "Backend Tango API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Weekly Availability",
+      "item": [
+        {
+          "name": "Get All",
+          "request": { "method": "GET", "url": "http://localhost:8080/api/v1/availability" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let data = pm.response.json();",
+                  "if (data.length > 0) {",
+                  "  pm.environment.set('availabilityId', data[0].id);",
+                  "  pm.environment.set('userId', data[0].userId || pm.environment.get('userId') || '');",
+                  "  pm.environment.set('dayOfWeek', data[0].dayOfWeek || 'MONDAY');",
+                  "  pm.test('availabilityId definido', function () { pm.expect(pm.environment.get('availabilityId')).to.not.be.undefined; });",
+                  "} else {",
+                  "  pm.environment.unset('availabilityId');",
+                  "  pm.test('No hay disponibilidad, availabilityId no definido', function () { pm.expect(pm.environment.get('availabilityId')).to.be.undefined; });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get By ID",
+          "request": { "method": "GET", "url": "http://localhost:8080/api/v1/availability/{{availabilityId}}" },
+          "event": [
+            {
+                "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if (!pm.environment.get('availabilityId')) {",
+                  "    throw new Error('La variable availabilityId no está definida. Ejecuta primero la petición Get All o Create.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('availabilityId está definido', function () {",
+                  "  pm.expect(pm.environment.get('availabilityId')).to.not.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get By User",
+          "request": { "method": "GET", "url": "http://localhost:8080/api/v1/availability/user/{{userId}}" },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if (!pm.environment.get('userId')) {",
+                  "    throw new Error('La variable userId no está definida. Ejecuta primero la petición Get All de Users o Create.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('userId está definido', function () {",
+                  "  pm.expect(pm.environment.get('userId')).to.not.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get By User and Day",
+          "request": { "method": "GET", "url": "http://localhost:8080/api/v1/availability/user/{{userId}}/day/{{dayOfWeek}}" },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if (!pm.environment.get('userId') || !pm.environment.get('dayOfWeek')) {",
+                  "    throw new Error('Las variables userId o dayOfWeek no están definidas. Ejecuta primero la petición Get All de Availability o Create.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('userId y dayOfWeek están definidos', function () {",
+                  "  pm.expect(pm.environment.get('userId')).to.not.be.undefined;",
+                  "  pm.expect(pm.environment.get('dayOfWeek')).to.not.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": "http://localhost:8080/api/v1/availability",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"dayOfWeek\": \"MONDAY\",\n  \"startTime\": \"08:00:00\",\n  \"endTime\": \"10:00:00\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if (!pm.environment.get('userId')) {",
+                  "    throw new Error('La variable userId no está definida. Ejecuta primero la petición Get All o Create de Users.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Respuesta exitosa o error claro', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 409]);",
+                  "});",
+                  "if (pm.response.code === 400) {",
+                  "  console.error('Error 400: Verifica que userId sea válido y que los campos tengan el formato correcto.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        { "name": "Get All", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/users" }, "event": [ { "listen": "test", "script": { "exec": [ "let data = pm.response.json();", "if (data.length > 0) {", " pm.environment.set('userId', data[0].id);", " pm.environment.set('email', data[0].email || '');", "}" ], "type": "text/javascript" } } ] },
+        {
+          "name": "Get By ID",
+          "request": { "method": "GET", "url": "http://localhost:8080/api/v1/users/{{userId}}" },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if (!pm.environment.get('userId')) {",
+                  "    throw new Error('La variable userId no está definida. Ejecuta primero la petición Get All o Create de Users.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('userId está definido', function () {",
+                  "  pm.expect(pm.environment.get('userId')).to.not.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        { "name": "Get By Email", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/users/email/{{email}}" } },
+        { "name": "Create", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": "http://localhost:8080/api/v1/users", "body": { "mode": "raw", "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"1234\",\n  \"fullName\": \"Test User\"\n}" } } },
+        { "name": "Signup", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": "http://localhost:8080/api/v1/users/signup", "body": { "mode": "raw", "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"1234\",\n  \"fullName\": \"Test User\"\n}" } } }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        { "name": "Get All", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/tasks" }, "event": [ { "listen": "test", "script": { "exec": [ "let data = pm.response.json();", "if (data.length > 0) {", " pm.environment.set('taskId', data[0].id);", " pm.environment.set('userId', data[0].userId || pm.environment.get('userId') || '');", " pm.environment.set('subjectId', data[0].subjectId || pm.environment.get('subjectId') || '');", " pm.environment.set('status', data[0].status || '');", "}" ], "type": "text/javascript" } } ] },
+        { "name": "Get By ID", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/tasks/{{id}}" } },
+        { "name": "Get By User", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/tasks/user/{{userId}}" } },
+        { "name": "Get By User and Status", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/tasks/user/{{userId}}/status/{{status}}" } },
+        { "name": "Get By Subject", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/tasks/subject/{{subjectId}}" } },
+        { "name": "Get By User and Subject", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/tasks/user/{{userId}}/subject/{{subjectId}}" } }
+      ]
+    },
+    {
+      "name": "Subjects",
+      "item": [
+        { "name": "Get All", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/subjects" }, "event": [ { "listen": "test", "script": { "exec": [ "let data = pm.response.json();", "if (data.length > 0) {", " pm.environment.set('subjectId', data[0].id);", " pm.environment.set('periodId', data[0].periodId || '');", "}" ], "type": "text/javascript" } } ] },
+        { "name": "Get By ID", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/subjects/{{id}}" } },
+        { "name": "Get By User", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/subjects/user/{{userId}}" } },
+        { "name": "Get By User and Period", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/subjects/user/{{userId}}/period/{{periodId}}" } },
+        { "name": "Create", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": "http://localhost:8080/api/v1/subjects", "body": { "mode": "raw", "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"name\": \"Matemáticas\",\n  \"code\": \"MAT101\",\n  \"weeklyHours\": 4,\n  \"startDate\": \"2025-01-01\",\n  \"endDate\": \"2025-06-30\",\n  \"periodId\": \"{{periodId}}\"\n}" } } }
+      ]
+    },
+    {
+      "name": "Study Blocks",
+      "item": [
+        { "name": "Get All", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/study-blocks" }, "event": [ { "listen": "test", "script": { "exec": [ "let data = pm.response.json();", "if (data.length > 0) {", " pm.environment.set('studyBlockId', data[0].id);", " pm.environment.set('userId', data[0].userId || pm.environment.get('userId') || '');", " pm.environment.set('subjectId', data[0].subjectId || pm.environment.get('subjectId') || '');", " pm.environment.set('status', data[0].status || '');", "}" ], "type": "text/javascript" } } ] },
+        { "name": "Get By ID", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/study-blocks/{{id}}" } },
+        { "name": "Get By User", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/study-blocks/user/{{userId}}" } },
+        { "name": "Get By User and Status", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/study-blocks/user/{{userId}}/status/{{status}}" } },
+        { "name": "Get By Subject", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/study-blocks/subject/{{subjectId}}" } }
+      ]
+    },
+    {
+      "name": "Security",
+      "item": [
+        { "name": "Get User Roles", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/roles/user/{{userId}}/roles" } },
+        { "name": "Get Role Privileges", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/roles/role/{{roleId}}/privileges" } },
+        { "name": "Assign Role to User", "request": { "method": "POST", "url": "http://localhost:8080/api/v1/roles/user/{{userId}}/role/{{roleId}}" } },
+        { "name": "Assign Privilege to Role", "request": { "method": "POST", "url": "http://localhost:8080/api/v1/roles/role/{{roleId}}/privilege/{{privilegeId}}" } }
+      ]
+    },
+    {
+      "name": "Ping",
+      "item": [
+        { "name": "Ping", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/ping" } }
+      ]
+    },
+    {
+      "name": "Calendar Events",
+      "item": [
+        { "name": "Get All", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/calendar" }, "event": [ { "listen": "test", "script": { "exec": [ "let data = pm.response.json();", "if (data.length > 0) {", " pm.environment.set('calendarId', data[0].id);", " pm.environment.set('userId', data[0].userId || pm.environment.get('userId') || '');", " pm.environment.set('studyBlockId', data[0].studyBlockId || pm.environment.get('studyBlockId') || '');", " pm.environment.set('provider', data[0].provider || '');", " pm.environment.set('externalEventId', data[0].externalEventId || '');", "}" ], "type": "text/javascript" } } ] },
+        { "name": "Get By ID", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/calendar/{{id}}" } },
+        { "name": "Get By External ID", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/calendar/external/{{externalEventId}}" } },
+        { "name": "Get By Study Block", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/calendar/study-block/{{studyBlockId}}" } },
+        { "name": "Get By Provider", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/calendar/provider/{{provider}}" } },
+        { "name": "Create", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": "http://localhost:8080/api/v1/calendar", "body": { "mode": "raw", "raw": "{\n  \"studyBlockId\": \"{{studyBlockId}}\",\n  \"provider\": \"GOOGLE\",\n  \"status\": \"CREATED\"\n}" } } }
+      ]
+    },
+    {
+      "name": "AI Advisor",
+      "item": [
+        { "name": "Obtener Consejo (POST)", "request": { "method": "POST", "url": "http://localhost:8080/api/v1/ai-advisor/advice", "body": { "mode": "raw", "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"customMessage\": \"Dame un consejo\"\n}" } } },
+        { "name": "Obtener Consejo por UserId (GET)", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/ai-advisor/advice/{{userId}}" } }
+      ]
+    },
+    {
+      "name": "Academic Periods",
+      "item": [
+        { "name": "Get All", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/periods" }, "event": [ { "listen": "test", "script": { "exec": [ "let data = pm.response.json();", "if (data.length > 0) {", " pm.environment.set('periodId', data[0].id);", " pm.environment.set('name', data[0].name || '');", "}" ], "type": "text/javascript" } } ] },
+        { "name": "Get By ID", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/periods/{{id}}" } },
+        { "name": "Get By Name", "request": { "method": "GET", "url": "http://localhost:8080/api/v1/periods/name/{{name}}" } },
+        { "name": "Create", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": "http://localhost:8080/api/v1/periods", "body": { "mode": "raw", "raw": "{\n  \"name\": \"2025-I\",\n  \"startDate\": \"2025-01-01\",\n  \"endDate\": \"2025-06-30\"\n}" } } },
+        { "name": "Update", "request": { "method": "PUT", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": "http://localhost:8080/api/v1/periods/{{id}}", "body": { "mode": "raw", "raw": "{\n  \"name\": \"2025-II\",\n  \"startDate\": \"2025-07-01\",\n  \"endDate\": \"2025-12-31\"\n}" } } }
+      ]
+    }
+  ]
+}
