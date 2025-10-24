@@ -39,10 +39,14 @@ class User(
 )
 
 @Embeddable
-class UserRoleId(
+data class UserRoleId(
+    @Column(name = "user_id")
     var userId: UUID? = null,
+    @Column(name = "role_id")
     var roleId: UUID? = null
 ) : Serializable
+
+
 
 @Entity
 @Table(
@@ -65,6 +69,40 @@ class UserRole(
     )
 
 @Entity
+@Table(
+    name = "refresh_token",
+    indexes = [
+        Index(name = "idx_refresh_token_user", columnList = "user_id"),
+        Index(name = "idx_refresh_token_hash", columnList = "token_hash", unique = true)
+    ]
+)
+class RefreshToken(
+    @Id @GeneratedValue var id: UUID? = null,
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id")
+    var user: User? = null,
+
+    @Column(name = "token_hash", nullable = false, unique = true, length = 64)
+    var tokenHash: String,
+
+    @Column(name = "issued_at", nullable = false)
+    var issuedAt: Instant,
+
+    @Column(name = "expires_at", nullable = false)
+    var expiresAt: Instant,
+
+    @Column(nullable = false)
+    var revoked: Boolean = false,
+
+    @Column(name = "revoked_at")
+    var revokedAt: Instant? = null,
+
+    @Column(name = "created_at", nullable = false)
+    var createdAt: Instant = Instant.now()
+)
+
+@Entity
 @Table(name = "role", indexes = [Index(name = "idx_role_name", columnList = "name", unique = true)])
 class Role(
     @Id @GeneratedValue var id: UUID? = null,
@@ -81,8 +119,10 @@ class Role(
 
 
 @Embeddable
-class RolePrivilegeId(
+data class RolePrivilegeId(
+    @Column(name = "role_id")
     var roleId: UUID? = null,
+    @Column(name = "privilege_id")
     var privilegeId: UUID? = null
 ) : Serializable
 
@@ -263,6 +303,8 @@ class CalendarEvent(
     var provider: CalendarProvider = CalendarProvider.GOOGLE,
 
     var externalEventId: String? = null,
+    
+    @Column(name = "last_sync_at")
     var lastSyncAt: LocalDateTime? = null,
 
     @Enumerated(EnumType.STRING)

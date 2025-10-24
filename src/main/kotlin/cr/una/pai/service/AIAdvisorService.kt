@@ -17,8 +17,24 @@ import kotlin.random.Random
 @Transactional
 class AIAdvisorService(
     private val taskService: TaskService,
-    private val adviceStrategy: AdviceStrategy // Inyectar la estrategia
+    private val adviceStrategy: AdviceStrategy, // Inyección para flexibilidad y pruebas
+    @Value("\${openrouter.api.key:}") private val apiKey: String,
+    @Value("\${openrouter.api.url:https://openrouter.ai/api/v1/chat/completions}") private val apiUrl: String,
+    @Value("\${openrouter.model:tngtech/deepseek-r1t2-chimera:free}") private val model: String,
+    @Value("\${app.base-url:http://localhost:8080}") private val appBaseUrl: String
 ) {
+    // Inicialización condicional de WebClient
+    private val webClient: WebClient? = if (apiKey.isNotBlank()) {
+        WebClient.builder()
+            .baseUrl(apiUrl)
+            .defaultHeader("Authorization", "Bearer $apiKey")
+            .defaultHeader("Content-Type", "application/json")
+            .defaultHeader("HTTP-Referer", appBaseUrl)
+            .defaultHeader("X-Title", "PAI Backend - AI Advisor")
+            .build()
+    } else {
+        null
+    }
 
     fun obtenerConsejosParaUsuario(userId: UUID, customMessage: String? = null): AIAdvisorResponse {
         val allTasks = taskService.findAllByUserIdWithSubject(userId)
@@ -72,6 +88,13 @@ class AIAdvisorService(
             upcomingDeadlines = upcomingDeadlinesContext,
             customMessage = randomCustomMessage
         )
-        return adviceStrategy.generarConsejo(contexto)
+        // Aquí puedes usar adviceStrategy para obtener el consejo
+        val consejo = adviceStrategy.getAdvice(userId, allTasks, customMessage)
+        // Si necesitas usar el WebClient para IA externa, verifica si está inicializado
+        if (webClient != null) {
+            // ... lógica para usar WebClient si es necesario ...
+        }
+        return consejo
     }
+    // ...existing code...
 }

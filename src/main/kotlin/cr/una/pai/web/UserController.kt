@@ -45,25 +45,6 @@ class UserController(
     @PostMapping("/signup")
     fun signup(@Valid @RequestBody input: UserInput): ResponseEntity<Any> = createUser(input)
 
-    data class LoginRequest(val email: String?, val password: String?)
-    data class LoginResponse(val id: UUID, val email: String, val fullName: String)
-
-    @PostMapping("/login")
-    fun login(@RequestBody req: LoginRequest): ResponseEntity<Any> {
-        val email = req.email?.trim().takeUnless { it.isNullOrEmpty() }
-            ?: return ResponseEntity.badRequest().body(mapOf("error" to "Email es requerido"))
-        val password = req.password?.takeUnless { it.isEmpty() }
-            ?: return ResponseEntity.badRequest().body(mapOf("error" to "Password es requerido"))
-
-        val userOpt = userService.findByEmail(email)
-        if (!userOpt.isPresent || userOpt.get().password != password) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(mapOf("error" to "Credenciales inválidas"))
-        }
-        val user = userService.findResultById(userOpt.get().id!!)
-        return ResponseEntity.ok(LoginResponse(user.id, user.email, user.fullName))
-    }
-
     @PutMapping("/{id}")
     fun updateUser(
         @PathVariable id: UUID,

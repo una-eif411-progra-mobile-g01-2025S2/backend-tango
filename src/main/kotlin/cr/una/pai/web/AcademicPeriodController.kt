@@ -4,6 +4,7 @@ import cr.una.pai.dto.AcademicPeriodInput
 import cr.una.pai.dto.AcademicPeriodResult
 import cr.una.pai.mapper.AcademicPeriodMapper
 import cr.una.pai.service.AcademicPeriodService
+import io.swagger.v3.oas.annotations.Operation
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -20,10 +21,12 @@ class AcademicPeriodController(
     private val periodMapper: AcademicPeriodMapper
 ) {
 
+    @Operation(summary = "Obtiene todos los periodos académicos")
     @GetMapping
     fun getAllPeriods(): ResponseEntity<List<AcademicPeriodResult>> =
         ResponseEntity.ok(periodService.findAllResults())
 
+    @Operation(summary = "Obtiene un periodo académico por su ID")
     @GetMapping("/{id}")
     fun getPeriodById(@PathVariable id: UUID): ResponseEntity<AcademicPeriodResult> = try {
         ResponseEntity.ok(periodService.findResultById(id))
@@ -31,12 +34,14 @@ class AcademicPeriodController(
         ResponseEntity.notFound().build()
     }
 
+    @Operation(summary = "Obtiene un periodo académico por su nombre")
     @GetMapping("/name/{name}")
     fun getPeriodByName(@PathVariable name: String): ResponseEntity<AcademicPeriodResult> =
         periodService.findByName(name)
             .map { ResponseEntity.ok(periodMapper.toResult(it)) }
             .orElse(ResponseEntity.notFound().build())
 
+    @Operation(summary = "Crea un nuevo periodo académico")
     @PostMapping
     fun createPeriod(@Valid @RequestBody input: AcademicPeriodInput): ResponseEntity<Any> =
         try {
@@ -46,6 +51,7 @@ class AcademicPeriodController(
             ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
         }
 
+    @Operation(summary = "Actualiza un periodo académico por su ID")
     @PutMapping("/{id}")
     fun updatePeriod(
         @PathVariable id: UUID,
@@ -58,6 +64,7 @@ class AcademicPeriodController(
             ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
         }
 
+    @Operation(summary = "Elimina un periodo académico por su ID")
     @DeleteMapping("/{id}")
     fun deletePeriod(@PathVariable id: UUID): ResponseEntity<Any> =
         try {

@@ -10,6 +10,7 @@ import cr.una.pai.mapper.mapWith
 import cr.una.pai.mapper.toResults
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
@@ -19,7 +20,8 @@ import java.util.*
 class UserService(
     private val userRepository: UserRepository,
     private val userMapper: UserMapper,
-    private val mappingContext: MappingContext
+    private val mappingContext: MappingContext,
+    private val passwordEncoder: PasswordEncoder
 ) {
 
     fun findAll(): List<User> = userRepository.findAll()
@@ -30,6 +32,7 @@ class UserService(
         if (userRepository.findByEmail(user.email).isPresent) {
             throw IllegalArgumentException("El email ${user.email} ya está registrado")
         }
+        user.password = encodePassword(user.password)
         return userRepository.save(user)
     }
 
@@ -43,7 +46,9 @@ class UserService(
 
         existing.email = user.email
         existing.fullName = user.fullName
-        existing.password = user.password
+        user.password.takeUnless { it.isNullOrBlank() }?.let {
+            existing.password = encodePassword(it)
+        }
         existing.degree = user.degree
         existing.yearOfStudy = user.yearOfStudy
         existing.university = user.university
@@ -65,6 +70,7 @@ class UserService(
         if (userRepository.findByEmail(input.email!!).isPresent)
             throw IllegalArgumentException("El email ${input.email} ya está registrado")
         val entity = userMapper.toEntity(input, mappingContext)
+        entity.password = encodePassword(entity.password)
         val saved = userRepository.save(entity)
         return userMapper.toResult(saved)
     }
@@ -73,6 +79,9 @@ class UserService(
         val entity = userRepository.findById(id).orElseThrow { IllegalArgumentException("Usuario no encontrado: $id") }
         // email se ignora en mapper (inmutable aquí); si se desea permitir cambio debe hacerse validación manual
         userMapper.update(entity, input, mappingContext)
+        if (!input.password.isNullOrBlank()) {
+            entity.password = encodePassword(input.password!!)
+        }
         val saved = userRepository.save(entity)
         return userMapper.toResult(saved)
     }
@@ -81,6 +90,9 @@ class UserService(
         val entity = userRepository.findById(id).orElseThrow { IllegalArgumentException("Usuario no encontrado: $id") }
         // No se permite cambio de email en este flujo (mapper ignora)
         userMapper.updateFromInput(entity, input, mappingContext)
+        if (!input.password.isNullOrBlank()) {
+            entity.password = encodePassword(input.password!!)
+        }
         val saved = userRepository.save(entity)
         return userMapper.toResult(saved)
     }
@@ -92,4 +104,16 @@ class UserService(
     fun findAllResults(): List<UserResult> = userRepository.findAll().toResults(userMapper::toResult)
 
     fun findAllPaged(pageable: Pageable): Page<UserResult> = userRepository.findAll(pageable).mapWith(userMapper::toResult)
+
+    private fun encodePassword(raw: String): String {
+        val password = raw.trim()
+        if (password.isEmpty()) {
+            throw IllegalArgumentException("Password no puede estar vacío")
+        }
+        return if (password.startsWith("$2a$") || password.startsWith("$2b$") || password.startsWith("$2y$")) {
+            password
+        } else {
+            passwordEncoder.encode(password)
+        }
+    }
 }

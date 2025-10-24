@@ -5,6 +5,7 @@ import cr.una.pai.dto.StudyBlockInput
 import cr.una.pai.dto.StudyBlockResult
 import cr.una.pai.mapper.StudyBlockMapper
 import cr.una.pai.service.StudyBlockService
+import io.swagger.v3.oas.annotations.Operation
 import jakarta.validation.Valid
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
@@ -23,10 +24,12 @@ class StudyBlockController(
     private val studyBlockMapper: StudyBlockMapper
 ) {
 
+    @Operation(summary = "Obtiene todos los bloques de estudio")
     @GetMapping
     fun getAllStudyBlocks(): ResponseEntity<List<StudyBlockResult>> =
         ResponseEntity.ok(studyBlockService.findAllResults())
 
+    @Operation(summary = "Obtiene un bloque de estudio por su ID")
     @GetMapping("/{id}")
     fun getStudyBlockById(@PathVariable id: UUID): ResponseEntity<StudyBlockResult> = try {
         ResponseEntity.ok(studyBlockService.findResultById(id))
@@ -34,10 +37,12 @@ class StudyBlockController(
         ResponseEntity.notFound().build()
     }
 
+    @Operation(summary = "Obtiene todos los bloques de estudio de un usuario")
     @GetMapping("/user/{userId}")
     fun getStudyBlocksByUserId(@PathVariable userId: UUID): ResponseEntity<List<StudyBlockResult>> =
         ResponseEntity.ok(studyBlockService.findAllByUserId(userId).map(studyBlockMapper::toResult))
 
+    @Operation(summary = "Obtiene los bloques de estudio de un usuario filtrados por estado")
     @GetMapping("/user/{userId}/status/{status}")
     fun getStudyBlocksByUserIdAndStatus(
         @PathVariable userId: UUID,
@@ -45,10 +50,12 @@ class StudyBlockController(
     ): ResponseEntity<List<StudyBlockResult>> =
         ResponseEntity.ok(studyBlockService.findAllByUserIdAndStatus(userId, status).map(studyBlockMapper::toResult))
 
+    @Operation(summary = "Obtiene los bloques de estudio de una materia")
     @GetMapping("/subject/{subjectId}")
     fun getStudyBlocksBySubjectId(@PathVariable subjectId: UUID): ResponseEntity<List<StudyBlockResult>> =
         ResponseEntity.ok(studyBlockService.findAllBySubjectId(subjectId).map(studyBlockMapper::toResult))
 
+    @Operation(summary = "Obtiene los bloques de estudio de un usuario en un rango de fechas")
     @GetMapping("/user/{userId}/range")
     fun getStudyBlocksByUserIdAndDateRange(
         @PathVariable userId: UUID,
@@ -57,6 +64,7 @@ class StudyBlockController(
     ): ResponseEntity<List<StudyBlockResult>> =
         ResponseEntity.ok(studyBlockService.findAllByUserIdAndDateRange(userId, start, end).map(studyBlockMapper::toResult))
 
+    @Operation(summary = "Crea un nuevo bloque de estudio")
     @PostMapping
     fun createStudyBlock(@Valid @RequestBody input: StudyBlockInput): ResponseEntity<Any> = try {
         val created = studyBlockService.create(input)
@@ -65,6 +73,7 @@ class StudyBlockController(
         ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
     }
 
+    @Operation(summary = "Actualiza un bloque de estudio por su ID")
     @PutMapping("/{id}")
     fun updateStudyBlock(
         @PathVariable id: UUID,
@@ -76,6 +85,7 @@ class StudyBlockController(
         ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
     }
 
+    @Operation(summary = "Actualiza el estado de un bloque de estudio por su ID")
     @PatchMapping("/{id}/status")
     fun updateStudyBlockStatus(
         @PathVariable id: UUID,
@@ -88,6 +98,7 @@ class StudyBlockController(
         ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
     }
 
+    @Operation(summary = "Elimina un bloque de estudio por su ID")
     @DeleteMapping("/{id}")
     fun deleteStudyBlock(@PathVariable id: UUID): ResponseEntity<Any> = try {
         studyBlockService.delete(id)

@@ -4,6 +4,7 @@ import cr.una.pai.dto.SubjectInput
 import cr.una.pai.dto.SubjectResult
 import cr.una.pai.mapper.SubjectMapper
 import cr.una.pai.service.SubjectService
+import io.swagger.v3.oas.annotations.Operation
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -20,10 +21,12 @@ class SubjectController(
     private val subjectMapper: SubjectMapper
 ) {
 
+    @Operation(summary = "Obtiene todas las materias")
     @GetMapping
     fun getAll(): ResponseEntity<List<SubjectResult>> =
         ResponseEntity.ok(subjectService.findAllResults())
 
+    @Operation(summary = "Obtiene una materia por su ID")
     @GetMapping("/{id}")
     fun getById(@PathVariable id: UUID): ResponseEntity<SubjectResult> = try {
         ResponseEntity.ok(subjectService.findResultById(id))
@@ -31,10 +34,12 @@ class SubjectController(
         ResponseEntity.notFound().build()
     }
 
+    @Operation(summary = "Obtiene todas las materias de un usuario")
     @GetMapping("/user/{userId}")
     fun getByUser(@PathVariable userId: UUID): ResponseEntity<List<SubjectResult>> =
         ResponseEntity.ok(subjectService.findAllByUserId(userId).map(subjectMapper::toResult))
 
+    @Operation(summary = "Obtiene las materias de un usuario en un periodo específico")
     @GetMapping("/user/{userId}/period/{periodId}")
     fun getByUserAndPeriod(
         @PathVariable userId: UUID,
@@ -42,6 +47,7 @@ class SubjectController(
     ): ResponseEntity<List<SubjectResult>> =
         ResponseEntity.ok(subjectService.findAllByUserIdAndPeriodId(userId, periodId).map(subjectMapper::toResult))
 
+    @Operation(summary = "Crea una nueva materia")
     @PostMapping
     fun create(@Valid @RequestBody input: SubjectInput): ResponseEntity<Any> =
         try {
@@ -50,6 +56,7 @@ class SubjectController(
         } catch (e: IllegalArgumentException) {
             ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
         }
+    @Operation(summary = "Actualiza una materia por su ID")
     @PutMapping("/{id}")
     fun update(
         @PathVariable id: UUID,
@@ -62,6 +69,7 @@ class SubjectController(
             ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
         }
 
+    @Operation(summary = "Elimina una materia por su ID")
     @DeleteMapping("/{id}")
     fun delete(@PathVariable id: UUID): ResponseEntity<Any> =
         try {
@@ -71,4 +79,3 @@ class SubjectController(
             ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
         }
 }
-
