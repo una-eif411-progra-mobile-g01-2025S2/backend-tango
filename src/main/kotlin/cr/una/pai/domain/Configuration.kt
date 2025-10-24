@@ -144,7 +144,7 @@ class JwtSecurityConfiguration {
                     .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/webjars/**").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers("/").permitAll() // Permitir acceso público al endpoint raíz
-                    .anyRequest().authenticated()
+                    .anyRequest().permitAll()
             }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authenticationProvider(authenticationProvider())
