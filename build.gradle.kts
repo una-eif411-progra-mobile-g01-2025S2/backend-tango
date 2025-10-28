@@ -25,6 +25,12 @@ repositories {
 	mavenCentral()
 }
 
+sourceSets {
+        main {
+                java.srcDirs("src/main/kotlin")
+        }
+}
+
 dependencies {
 	// MapStruct core
 	implementation("org.mapstruct:mapstruct:1.6.0")
