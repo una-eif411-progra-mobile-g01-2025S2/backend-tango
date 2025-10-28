@@ -129,6 +129,8 @@ class JwtSecurityConfiguration(
         http
             .csrf { it.disable() }
             .cors { it.configurationSource(corsConfigurationSource()) }
+            .httpBasic { it.disable() }
+            .formLogin { it.disable() }
             .authorizeHttpRequests {
                 it
                     .requestMatchers(publicSignupPath).permitAll()
@@ -141,7 +143,8 @@ class JwtSecurityConfiguration(
                     .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/webjars/**").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers("/").permitAll() // Permitir acceso público al endpoint raíz
-                    .anyRequest().permitAll()
+                    .requestMatchers("/error", "/actuator/health").permitAll()
+                    .anyRequest().authenticated()
             }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authenticationProvider(authenticationProvider())
