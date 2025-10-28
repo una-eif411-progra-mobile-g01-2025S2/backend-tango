@@ -2,7 +2,6 @@ package cr.una.pai.domain
 
 //import cr.una.pai.domain.AppCustomDsl.Companion.customDsl
 import cr.una.pai.security.JwtAuthFilter
-import jakarta.annotation.Resource
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -53,7 +52,9 @@ class OpenSecurityConfiguration {
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-class JwtSecurityConfiguration {
+class JwtSecurityConfiguration(
+    private val userDetailsService: AppUserDetailsService,
+) {
 
     @Value("\${url.user.signup}")
     private val URL_SIGNUP: String? = null
@@ -63,10 +64,6 @@ class JwtSecurityConfiguration {
 
     @Value("\${api.endpoints.auth:/api/v1/auth}")
     private val AUTH_BASE: String? = null
-
-
-    @Resource
-    private val userDetailsService: AppUserDetailsService? = null
 
     @Bean
     fun passwordEncoder(): PasswordEncoder = object : PasswordEncoder {
@@ -132,6 +129,8 @@ class JwtSecurityConfiguration {
         http
             .csrf { it.disable() }
             .cors { it.configurationSource(corsConfigurationSource()) }
+            .httpBasic { it.disable() }
+            .formLogin { it.disable() }
             .authorizeHttpRequests {
                 it
                     .requestMatchers(publicSignupPath).permitAll()
@@ -144,7 +143,8 @@ class JwtSecurityConfiguration {
                     .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/webjars/**").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers("/").permitAll() // Permitir acceso público al endpoint raíz
-                    .anyRequest().permitAll()
+                    .requestMatchers("/error", "/actuator/health").permitAll()
+                    .anyRequest().authenticated()
             }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authenticationProvider(authenticationProvider())
