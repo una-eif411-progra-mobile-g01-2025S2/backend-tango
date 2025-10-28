@@ -111,7 +111,7 @@ class AuthService(
     }
 
     private fun revokeActiveRefreshTokens(userId: UUID) {
-        val activeTokens = refreshTokenRepository.findAllByUserIdAndRevokedFalse(userId)
+        val activeTokens = refreshTokenRepository.findAllByUser_IdAndRevokedFalse(userId)
         if (activeTokens.isEmpty()) return
         val now = Instant.now()
         activeTokens.forEach {

@@ -40,7 +40,7 @@ interface RolePrivilegeRepository : JpaRepository<RolePrivilege, RolePrivilegeId
 
 interface RefreshTokenRepository : JpaRepository<RefreshToken, UUID> {
     fun findByTokenHash(tokenHash: String): Optional<RefreshToken>
-    fun findAllByUserIdAndRevokedFalse(userId: UUID): List<RefreshToken>
+    fun findAllByUser_IdAndRevokedFalse(userId: UUID): List<RefreshToken>
 }
 
 /* =========================

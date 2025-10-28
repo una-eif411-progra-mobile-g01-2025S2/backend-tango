@@ -64,7 +64,7 @@ class AuthServiceTest {
         whenever(authenticationManager.authenticate(any())).thenReturn(authentication)
         whenever(userRepository.findByEmail("user@pai.local")).thenReturn(Optional.of(user))
         whenever(userRepository.findById(userId)).thenReturn(Optional.of(user))
-        whenever(refreshTokenRepository.findAllByUserIdAndRevokedFalse(userId)).thenReturn(emptyList())
+        whenever(refreshTokenRepository.findAllByUser_IdAndRevokedFalse(userId)).thenReturn(emptyList())
         whenever(jwtService.generateAccessToken(user, "USER")).thenReturn("access-token")
         whenever(jwtService.generateRefreshToken(user)).thenReturn("refresh-token")
         whenever(jwtService.accessTokenTtl()).thenReturn(900L)
@@ -97,6 +97,6 @@ class AuthServiceTest {
         }
 
         verify(userRepository, never()).findByEmail(any())
-        verify(refreshTokenRepository, never()).findAllByUserIdAndRevokedFalse(any())
+        verify(refreshTokenRepository, never()).findAllByUser_IdAndRevokedFalse(any())
     }
 }
