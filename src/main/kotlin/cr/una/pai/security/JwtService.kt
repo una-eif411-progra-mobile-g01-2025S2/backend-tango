@@ -9,6 +9,7 @@ import io.jsonwebtoken.security.Keys
 import org.springframework.stereotype.Service
 import java.nio.charset.StandardCharsets
 import java.security.Key
+import java.security.MessageDigest
 import java.time.Instant
 import java.util.Date
 
@@ -23,7 +24,14 @@ class JwtService(
         } catch (_: IllegalArgumentException) {
             properties.secret.toByteArray(StandardCharsets.UTF_8)
         }
-        Keys.hmacShaKeyFor(secretBytes)
+
+        val keyMaterial = if (secretBytes.size < MIN_KEY_SIZE_BYTES) {
+            MessageDigest.getInstance("SHA-512").digest(secretBytes)
+        } else {
+            secretBytes
+        }
+
+        Keys.hmacShaKeyFor(keyMaterial)
     }
 
     fun generateAccessToken(user: User, primaryRole: String?): String =
@@ -77,3 +85,5 @@ class JwtService(
 
     fun accessTokenTtl(): Long = properties.accessTokenTtl.toSeconds()
 }
+
+private const val MIN_KEY_SIZE_BYTES = 64

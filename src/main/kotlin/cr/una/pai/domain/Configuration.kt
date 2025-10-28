@@ -45,6 +45,8 @@ class OpenSecurityConfiguration {
     }
 }
 
+private const val BCRYPT_LENGTH = 60
+
 // ======================================
 // 🔐 CONFIG JWT (seguridad activa)
 // ======================================
@@ -78,13 +80,27 @@ class JwtSecurityConfiguration(
             if (encodedPassword.isNullOrEmpty()) {
                 return false
             }
+
             val candidate = rawPassword?.toString() ?: return false
-            return if (encodedPassword.startsWith("$2a$") || encodedPassword.startsWith("$2b$") || encodedPassword.startsWith("$2y$")) {
-                delegate.matches(candidate, encodedPassword)
+            val normalized = encodedPassword.trim()
+
+            return if (isBcryptHash(normalized)) {
+                try {
+                    delegate.matches(candidate, normalized)
+                } catch (_: IllegalArgumentException) {
+                    false
+                }
             } else {
-                encodedPassword == candidate
+                normalized == candidate
             }
         }
+
+        private fun isBcryptHash(value: String): Boolean =
+            value.length == BCRYPT_LENGTH && (
+                value.startsWith("$2a$") ||
+                    value.startsWith("$2b$") ||
+                    value.startsWith("$2y$")
+                )
     }
 
     @Bean
