@@ -67,6 +67,7 @@ class AuthServiceTest {
         whenever(refreshTokenRepository.findAllByUser_IdAndRevokedFalse(userId)).thenReturn(emptyList())
         whenever(jwtService.generateAccessToken(user, "USER")).thenReturn("access-token")
         whenever(jwtService.generateRefreshToken(user)).thenReturn("refresh-token")
+        whenever(jwtService.accessTokenType()).thenReturn("access")
         whenever(jwtService.accessTokenTtl()).thenReturn(900L)
         whenever(jwtService.refreshTokenTtl()).thenReturn(604800L)
         whenever(refreshTokenRepository.save(any())).thenAnswer { it.arguments[0] as RefreshToken }
@@ -78,10 +79,17 @@ class AuthServiceTest {
         assertEquals("user@pai.local", captor.firstValue.principal)
         assertEquals("password123", captor.firstValue.credentials)
 
+        assertEquals("access-token", response.token)
         assertEquals("access-token", response.accessToken)
         assertEquals("refresh-token", response.refreshToken)
+        assertEquals("access", response.tokenType)
+        assertEquals(900L, response.expiresIn)
         assertEquals(900L, response.accessTokenExpiresIn)
         assertEquals(604800L, response.refreshTokenExpiresIn)
+        assertEquals(userId, response.user.id)
+        assertEquals("Usuario PAI", response.user.name)
+        assertEquals("user@pai.local", response.user.email)
+        assertEquals(response.user, response.userDto)
     }
 
     @Test
