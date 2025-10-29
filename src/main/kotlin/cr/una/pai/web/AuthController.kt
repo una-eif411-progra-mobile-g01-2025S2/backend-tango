@@ -2,6 +2,7 @@ package cr.una.pai.web
 
 import cr.una.pai.dto.AuthTokensResponse
 import cr.una.pai.dto.LoginRequest
+import cr.una.pai.dto.LoginResponse
 import cr.una.pai.dto.RefreshTokenRequest
 import cr.una.pai.service.AuthService
 import cr.una.pai.service.AuthService.InvalidCredentialsException
@@ -25,11 +26,11 @@ class AuthController(
 ) {
 
     @PostMapping("/login")
-    fun login(@Valid @RequestBody request: LoginRequest): ResponseEntity<AuthTokensResponse> {
+    fun login(@Valid @RequestBody request: LoginRequest): ResponseEntity<LoginResponse> {
         val tokens = authService.login(request)
-        return ResponseEntity.ok()
-            .header(REFRESH_TOKEN_HEADER, tokens.refreshToken)
-            .body(tokens)
+        val builder = ResponseEntity.ok()
+        tokens.refreshToken?.let { builder.header(REFRESH_TOKEN_HEADER, it) }
+        return builder.body(tokens)
     }
 
     @PostMapping("/refresh")
