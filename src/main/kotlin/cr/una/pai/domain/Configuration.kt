@@ -159,14 +159,6 @@ class JwtSecurityConfiguration(
                         "${authBasePath.ensureLeadingSlash()}/refresh",
                         "${authBasePath.ensureLeadingSlash()}/logout"
                     ).permitAll()
-                    .requestMatchers(
-                        HttpMethod.POST,
-                        "${rolesBasePath.ensureLeadingSlash()}/user/**/role/**"
-                    ).permitAll()
-                    .requestMatchers(
-                        HttpMethod.DELETE,
-                        "${rolesBasePath.ensureLeadingSlash()}/user/**/role/**"
-                    ).permitAll()
                     .requestMatchers("/api/v1/unsecure/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/webjars/**").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
