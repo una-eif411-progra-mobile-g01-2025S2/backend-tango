@@ -67,6 +67,9 @@ class JwtSecurityConfiguration(
     @Value("\${api.endpoints.auth:/api/v1/auth}")
     private val AUTH_BASE: String? = null
 
+    @Value("\${api.endpoints.roles:/api/v1/roles}")
+    private val ROLES_BASE: String? = null
+
     @Bean
     fun passwordEncoder(): PasswordEncoder = object : PasswordEncoder {
         private val delegate = BCryptPasswordEncoder()
@@ -141,6 +144,7 @@ class JwtSecurityConfiguration(
     ): SecurityFilterChain {
         val publicSignupPath = URL_SIGNUP.toRequestPath("/api/v1/users/signup")
         val authBasePath = AUTH_BASE.toRequestPath("/api/v1/auth").removeSuffix("/")
+        val rolesBasePath = ROLES_BASE.toRequestPath("/api/v1/roles").removeSuffix("/")
 
         http
             .csrf { it.disable() }
@@ -154,6 +158,14 @@ class JwtSecurityConfiguration(
                         "${authBasePath.ensureLeadingSlash()}/login",
                         "${authBasePath.ensureLeadingSlash()}/refresh",
                         "${authBasePath.ensureLeadingSlash()}/logout"
+                    ).permitAll()
+                    .requestMatchers(
+                        HttpMethod.POST,
+                        "${rolesBasePath.ensureLeadingSlash()}/user/**/role/**"
+                    ).permitAll()
+                    .requestMatchers(
+                        HttpMethod.DELETE,
+                        "${rolesBasePath.ensureLeadingSlash()}/user/**/role/**"
                     ).permitAll()
                     .requestMatchers("/api/v1/unsecure/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/webjars/**").permitAll()

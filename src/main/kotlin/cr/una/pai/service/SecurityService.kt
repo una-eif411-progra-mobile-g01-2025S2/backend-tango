@@ -64,6 +64,14 @@ class SecurityService(
     }
 
     /**
+     * Elimina la relación UserRole para quitar un rol de un usuario.
+     */
+    fun removeRoleFromUser(userId: UUID, roleId: UUID) {
+        val userRoleId = UserRoleId(userId = userId, roleId = roleId)
+        userRoleRepository.findById(userRoleId).ifPresent { userRoleRepository.delete(it) }
+    }
+
+    /**
      * Asignar privilegio a rol creando la entidad intermedia RolePrivilege
      */
     fun assignPrivilegeToRole(roleId: UUID, privilegeId: UUID): RolePrivilege {

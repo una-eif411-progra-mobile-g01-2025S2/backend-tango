@@ -37,11 +37,20 @@ class SecurityController(
     fun assignRoleToUser(
         @PathVariable userId: UUID,
         @PathVariable roleId: UUID
-    ): ResponseEntity<Any> = try {
+    ): ResponseEntity<Map<String, String>> {
         securityService.assignRoleToUser(userId, roleId)
-        ResponseEntity.status(HttpStatus.CREATED).build()
-    } catch (e: IllegalArgumentException) {
-        ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(mapOf("message" to "Rol asignado correctamente"))
+    }
+
+    @Operation(summary = "Elimina un rol asignado a un usuario")
+    @DeleteMapping("/user/{userId}/role/{roleId}")
+    fun removeRoleFromUser(
+        @PathVariable userId: UUID,
+        @PathVariable roleId: UUID
+    ): ResponseEntity<Void> {
+        securityService.removeRoleFromUser(userId, roleId)
+        return ResponseEntity.noContent().build()
     }
 
     @Operation(summary = "Asigna un privilegio a un rol")
@@ -49,11 +58,9 @@ class SecurityController(
     fun assignPrivilegeToRole(
         @PathVariable roleId: UUID,
         @PathVariable privilegeId: UUID
-    ): ResponseEntity<Any> = try {
+    ): ResponseEntity<Void> {
         securityService.assignPrivilegeToRole(roleId, privilegeId)
-        ResponseEntity.status(HttpStatus.CREATED).build()
-    } catch (e: IllegalArgumentException) {
-        ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
+        return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 
     @Operation(summary = "Verifica si un usuario tiene un privilegio específico")
