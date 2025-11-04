@@ -54,7 +54,20 @@ class SubjectController(
             val created = subjectService.create(input)
             ResponseEntity.status(HttpStatus.CREATED).body(created)
         } catch (e: IllegalArgumentException) {
-            ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
+            val errorResponse = mapOf(
+                "error" to (e.message ?: "Invalid data"),
+                "timestamp" to java.time.Instant.now().toString(),
+                "status" to 400
+            )
+            ResponseEntity.badRequest().body(errorResponse)
+        } catch (e: Exception) {
+            val errorResponse = mapOf(
+                "error" to "Error interno al crear la materia",
+                "message" to (e.message ?: "Unknown error"),
+                "timestamp" to java.time.Instant.now().toString(),
+                "status" to 500
+            )
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse)
         }
     @Operation(summary = "Actualiza una materia por su ID")
     @PutMapping("/{id}")

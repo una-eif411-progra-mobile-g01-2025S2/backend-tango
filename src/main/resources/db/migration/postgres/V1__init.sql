@@ -1,4 +1,4 @@
--- Flyway Migration: V1__create_tables.sql
+-- Flyway Migration: V1__init.sql
 -- Schema initialization consolidated for PAI backend.
 -- Ensures tables reflect current JPA/Kotlin entities and use UUID primary keys.
 
@@ -17,14 +17,14 @@ CREATE TABLE IF NOT EXISTS app_user (
 );
 
 CREATE TABLE IF NOT EXISTS role (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     description TEXT,
     CONSTRAINT idx_role_name UNIQUE (name)
 );
 
 CREATE TABLE IF NOT EXISTS privilege (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     description TEXT,
     CONSTRAINT idx_priv_name UNIQUE (name)
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS role_privilege (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_role_privilege ON role_privilege(role_id, privilege_id);
 
 CREATE TABLE IF NOT EXISTS refresh_token (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     token_hash VARCHAR(64) NOT NULL,
     issued_at TIMESTAMPTZ NOT NULL,
@@ -67,7 +67,7 @@ CREATE INDEX IF NOT EXISTS idx_refresh_token_user ON refresh_token(user_id);
 
 /* ========= Académico ========= */
 CREATE TABLE IF NOT EXISTS academic_period (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS academic_period (
 );
 
 CREATE TABLE IF NOT EXISTS subject (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     period_id UUID NOT NULL,
     name TEXT NOT NULL,
@@ -97,7 +97,7 @@ CREATE INDEX IF NOT EXISTS idx_subject_period ON subject(period_id);
 
 /* ========= Planificación ========= */
 CREATE TABLE IF NOT EXISTS task (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     subject_id UUID NOT NULL,
     title TEXT NOT NULL,
@@ -115,7 +115,7 @@ CREATE INDEX IF NOT EXISTS idx_task_user ON task(user_id);
 CREATE INDEX IF NOT EXISTS idx_task_subject ON task(subject_id);
 
 CREATE TABLE IF NOT EXISTS study_block (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     subject_id UUID NOT NULL,
     task_id UUID,
@@ -136,21 +136,22 @@ CREATE INDEX IF NOT EXISTS idx_study_block_subject ON study_block(subject_id);
 CREATE INDEX IF NOT EXISTS idx_study_block_task ON study_block(task_id);
 
 CREATE TABLE IF NOT EXISTS weekly_availability (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     day_of_week TEXT NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     CONSTRAINT fk_weekly_availability_user FOREIGN KEY (user_id) REFERENCES app_user(id) ON DELETE CASCADE,
+    CONSTRAINT chk_weekly_availability_day CHECK (day_of_week IN ('MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY')),
     CONSTRAINT chk_weekly_availability_times CHECK (end_time > start_time)
 );
 
 CREATE INDEX IF NOT EXISTS idx_weekly_availability_user ON weekly_availability(user_id);
 
 CREATE TABLE IF NOT EXISTS calendar_event (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     study_block_id UUID,
-    provider TEXT NOT NULL DEFAULT 'GOOGLE',
+    provider TEXT NOT NULL,
     external_event_id TEXT,
     last_sync_at TIMESTAMP,
     status TEXT NOT NULL DEFAULT 'CREATED',
@@ -160,3 +161,4 @@ CREATE TABLE IF NOT EXISTS calendar_event (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_calendar_event_study_block ON calendar_event(study_block_id) WHERE study_block_id IS NOT NULL;
+

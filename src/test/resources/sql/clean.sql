@@ -7,5 +7,5 @@ DELETE FROM academic_period;
 DELETE FROM user_role;
 DELETE FROM role_privilege;
 DELETE FROM privilege;
-DELETE FROM "role";
+DELETE FROM role;
 DELETE FROM app_user;

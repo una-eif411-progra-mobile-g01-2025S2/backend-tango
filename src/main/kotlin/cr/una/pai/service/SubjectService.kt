@@ -74,10 +74,31 @@ class SubjectService(
 
     // ================= DTO + Mapper =================
     fun create(input: SubjectInput): SubjectResult {
-        if (input.userId == null || input.periodId == null || input.name == null || input.code == null)
-            throw IllegalArgumentException("userId, periodId, name y code son obligatorios")
+        // Validación de campos obligatorios
+        if (input.name.isNullOrBlank())
+            throw IllegalArgumentException("El campo 'name' es obligatorio")
+
+        if (input.code.isNullOrBlank())
+            throw IllegalArgumentException("El campo 'code' es obligatorio")
+
+        if (input.userId == null)
+            throw IllegalArgumentException("El campo 'userId' es obligatorio")
+
+        if (input.periodId == null)
+            throw IllegalArgumentException("El campo 'periodId' es obligatorio. Debe crear un período académico primero.")
+
+        // Validar que el usuario existe
+        if (!userRepository.existsById(input.userId!!))
+            throw IllegalArgumentException("Usuario no encontrado: ${input.userId}. El usuario debe existir en la base de datos.")
+
+        // Validar que el período existe
+        if (!academicPeriodRepository.existsById(input.periodId!!))
+            throw IllegalArgumentException("Período académico no encontrado: ${input.periodId}. Debe crear el período primero usando POST /api/v1/periods")
+
+        // Validar que no exista una materia con el mismo código
         subjectRepository.findByUserIdAndPeriodIdAndCode(input.userId!!, input.periodId!!, input.code!!)
             .ifPresent { throw IllegalArgumentException("Ya existe una materia con código ${input.code} para este período") }
+
         val entity = subjectMapper.toEntity(input, mappingContext)
         return subjectMapper.toResult(subjectRepository.save(entity))
     }

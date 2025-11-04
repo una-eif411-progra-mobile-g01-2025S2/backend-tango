@@ -68,6 +68,9 @@ dependencies {
 	// Devtools (solo en desarrollo)
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 
+	// H2 en memoria para desarrollo/local
+	runtimeOnly("com.h2database:h2")
+
 	// Tests
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.security:spring-security-test")

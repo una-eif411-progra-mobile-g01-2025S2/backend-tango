@@ -28,6 +28,20 @@ class OpenRouterAdviceStrategy(
         // Log para depuración: mostrar el contexto recibido
         println("[OpenRouterAdviceStrategy] Contexto recibido: pendingTasks=${contexto.pendingTasks.size}, customMessage=${contexto.customMessage}")
         contexto.pendingTasks.forEach { println("[OpenRouterAdviceStrategy] Tarea: ${it.title}, ${it.subject}, ${it.deadline}, ${it.status}") }
+
+        // Si no hay tareas, devolver un mensaje amigable sin llamar a la API
+        if (contexto.pendingTasks.isEmpty() && contexto.upcomingDeadlines.isEmpty()) {
+            println("[OpenRouterAdviceStrategy] Usuario sin tareas. Devolviendo mensaje de bienvenida.")
+            return AIAdvisorResponse(
+                advice = "¡Bienvenido! 🎓\n\n" +
+                        "Aún no tienes tareas registradas. Para comenzar:\n\n" +
+                        "1. Crea tus materias académicas\n" +
+                        "2. Agrega tus tareas y exámenes\n" +
+                        "3. Vuelve aquí para recibir consejos personalizados\n\n" +
+                        "¡Estoy aquí para ayudarte a organizar tu estudio!"
+            )
+        }
+
         val prompt = construirPrompt(contexto)
         println("[OpenRouterAdviceStrategy] Prompt generado para IA:\n$prompt")
         val advice = llamarAPIOpenRouter(prompt)
