@@ -1,17 +1,17 @@
 package cr.una.pai.service
 
 import cr.una.pai.domain.TaskStatus
-import cr.una.pai.dto.*
+import cr.una.pai.dto.AIAdvisorResponse
+import cr.una.pai.dto.AIContextData
+import cr.una.pai.dto.TaskContextInfo
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.bodyToMono
-import reactor.core.publisher.Mono
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.*
-import kotlin.random.Random
+import java.util.Random
+import java.util.UUID
 
 @Service
 @Transactional
@@ -50,26 +50,26 @@ class AIAdvisorService(
         val allTasks = taskService.findAllByUserIdWithSubject(userId)
         println("[AIAdvisor] Tareas obtenidas para el usuario $userId: ${allTasks.size}")
         allTasks.forEach { println("[AIAdvisor] Tarea: ${it.title}, status: ${it.status}, deadline: ${it.deadline}, subject: ${it.subject?.name}") }
-        val shuffledTasks = allTasks.shuffled(java.util.Random(System.currentTimeMillis()))
-        val pendingTasks = shuffledTasks.filter { it.status == cr.una.pai.domain.TaskStatus.PENDING || it.status == cr.una.pai.domain.TaskStatus.IN_PROGRESS }
-        val completedTasks = shuffledTasks.filter { it.status == cr.una.pai.domain.TaskStatus.COMPLETED }
-        val today = java.time.LocalDate.now()
+        val shuffledTasks = allTasks.shuffled(Random(System.currentTimeMillis()))
+        val pendingTasks = shuffledTasks.filter { it.status == TaskStatus.PENDING || it.status == TaskStatus.IN_PROGRESS }
+        val completedTasks = shuffledTasks.filter { it.status == TaskStatus.COMPLETED }
+        val today = LocalDate.now()
         val upcomingDeadlines = pendingTasks
             .filter { it.deadline != null && it.deadline!!.isBefore(today.plusDays(7)) }
             .sortedBy { it.deadline }
         val pendingTasksContext = pendingTasks.map { task ->
-            cr.una.pai.dto.TaskContextInfo(
+            TaskContextInfo(
                 title = task.title,
-                deadline = task.deadline?.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                deadline = task.deadline?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                 priority = task.priority,
                 subject = task.subject?.name ?: "(sin materia)",
                 status = task.status.name
             )
         }
         val upcomingDeadlinesContext = upcomingDeadlines.map { task ->
-            cr.una.pai.dto.TaskContextInfo(
+            TaskContextInfo(
                 title = task.title,
-                deadline = task.deadline?.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                deadline = task.deadline?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                 priority = task.priority,
                 subject = task.subject?.name ?: "(sin materia)",
                 status = task.status.name
@@ -82,17 +82,17 @@ class AIAdvisorService(
             upcomingDeadlinesContext
         } else {
             completedTasks.map { task ->
-                cr.una.pai.dto.TaskContextInfo(
+                TaskContextInfo(
                     title = task.title,
-                    deadline = task.deadline?.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                    deadline = task.deadline?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                     priority = task.priority,
                     subject = task.subject?.name ?: "(sin materia)",
                     status = task.status.name
                 )
             }
         }
-        val randomCustomMessage = customMessage ?: "ID de consulta: ${java.util.UUID.randomUUID()}"
-        val contexto = cr.una.pai.dto.AIContextData(
+        val randomCustomMessage = customMessage ?: "ID de consulta: ${UUID.randomUUID()}"
+        val contexto = AIContextData(
             pendingTasks = contextTasks,
             completedTasksCount = completedTasks.size,
             upcomingDeadlines = upcomingDeadlinesContext,

@@ -2,7 +2,6 @@ package cr.una.pai.domain
 
 //import cr.una.pai.domain.AppCustomDsl.Companion.customDsl
 import cr.una.pai.security.JwtAuthFilter
-import jakarta.annotation.Resource
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -46,6 +45,8 @@ class OpenSecurityConfiguration {
     }
 }
 
+private const val BCRYPT_LENGTH = 60
+
 // ======================================
 // 🔐 CONFIG JWT (seguridad activa)
 // ======================================
@@ -53,7 +54,9 @@ class OpenSecurityConfiguration {
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-class JwtSecurityConfiguration {
+class JwtSecurityConfiguration(
+    private val userDetailsService: AppUserDetailsService,
+) {
 
     @Value("\${url.user.signup}")
     private val URL_SIGNUP: String? = null
@@ -64,9 +67,8 @@ class JwtSecurityConfiguration {
     @Value("\${api.endpoints.auth:/api/v1/auth}")
     private val AUTH_BASE: String? = null
 
-
-    @Resource
-    private val userDetailsService: AppUserDetailsService? = null
+    @Value("\${api.endpoints.roles:/api/v1/roles}")
+    private val ROLES_BASE: String? = null
 
     @Bean
     fun passwordEncoder(): PasswordEncoder = object : PasswordEncoder {
@@ -81,13 +83,27 @@ class JwtSecurityConfiguration {
             if (encodedPassword.isNullOrEmpty()) {
                 return false
             }
+
             val candidate = rawPassword?.toString() ?: return false
-            return if (encodedPassword.startsWith("$2a$") || encodedPassword.startsWith("$2b$") || encodedPassword.startsWith("$2y$")) {
-                delegate.matches(candidate, encodedPassword)
+            val normalized = encodedPassword.trim()
+
+            return if (isBcryptHash(normalized)) {
+                try {
+                    delegate.matches(candidate, normalized)
+                } catch (_: IllegalArgumentException) {
+                    false
+                }
             } else {
-                encodedPassword == candidate
+                normalized == candidate
             }
         }
+
+        private fun isBcryptHash(value: String): Boolean =
+            value.length == BCRYPT_LENGTH && (
+                value.startsWith("$2a$") ||
+                    value.startsWith("$2b$") ||
+                    value.startsWith("$2y$")
+                )
     }
 
     @Bean
@@ -128,10 +144,13 @@ class JwtSecurityConfiguration {
     ): SecurityFilterChain {
         val publicSignupPath = URL_SIGNUP.toRequestPath("/api/v1/users/signup")
         val authBasePath = AUTH_BASE.toRequestPath("/api/v1/auth").removeSuffix("/")
+        val rolesBasePath = ROLES_BASE.toRequestPath("/api/v1/roles").removeSuffix("/")
 
         http
             .csrf { it.disable() }
             .cors { it.configurationSource(corsConfigurationSource()) }
+            .httpBasic { it.disable() }
+            .formLogin { it.disable() }
             .authorizeHttpRequests {
                 it
                     .requestMatchers(publicSignupPath).permitAll()
@@ -140,11 +159,13 @@ class JwtSecurityConfiguration {
                         "${authBasePath.ensureLeadingSlash()}/refresh",
                         "${authBasePath.ensureLeadingSlash()}/logout"
                     ).permitAll()
+                    .requestMatchers("${rolesBasePath.ensureLeadingSlash()}/**").permitAll()
                     .requestMatchers("/api/v1/unsecure/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/webjars/**").permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers("/").permitAll() // Permitir acceso público al endpoint raíz
-                    .anyRequest().permitAll()
+                    .requestMatchers("/error", "/actuator/health").permitAll()
+                    .anyRequest().authenticated()
             }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authenticationProvider(authenticationProvider())

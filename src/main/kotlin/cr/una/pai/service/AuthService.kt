@@ -4,10 +4,15 @@ import cr.una.pai.domain.RefreshToken
 import cr.una.pai.domain.RefreshTokenRepository
 import cr.una.pai.domain.UserRepository
 import cr.una.pai.dto.AuthTokensResponse
+import cr.una.pai.dto.AuthUser
 import cr.una.pai.dto.LoginRequest
+import cr.una.pai.dto.LoginResponse
 import cr.una.pai.dto.RefreshTokenRequest
 import cr.una.pai.security.JwtService
-import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.authentication.AuthenticationManager
+import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.AuthenticationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.security.MessageDigest
@@ -20,36 +25,51 @@ class AuthService(
     private val userRepository: UserRepository,
     private val refreshTokenRepository: RefreshTokenRepository,
     private val jwtService: JwtService,
-    private val passwordEncoder: PasswordEncoder
+    private val authenticationManager: AuthenticationManager
 ) {
 
     @Transactional
-    fun login(request: LoginRequest): AuthTokensResponse {
+    fun login(request: LoginRequest): LoginResponse {
         val email = request.email.trim().lowercase()
+        try {
+            authenticationManager.authenticate(
+                UsernamePasswordAuthenticationToken(email, request.password)
+            )
+        } catch (ex: BadCredentialsException) {
+            throw InvalidCredentialsException("Credenciales inválidas", ex)
+        } catch (ex: AuthenticationException) {
+            throw InvalidCredentialsException("Credenciales inválidas", ex)
+        }
+
         val user = userRepository.findByEmail(email)
             .orElseThrow { InvalidCredentialsException("Credenciales inválidas") }
 
-        val rawPassword = request.password
-        val storedPassword = user.password
-        val passwordMatches = storedPassword.isNotBlank() &&
-            passwordEncoder.matches(rawPassword, storedPassword)
-
-        if (!passwordMatches) {
-            throw InvalidCredentialsException("Credenciales inválidas")
-        }
-
         val primaryRole = user.userRoles.mapNotNull { it.role?.name }.firstOrNull()
-        revokeActiveRefreshTokens(user.id!!)
+        val userId = requireNotNull(user.id) { "Usuario sin identificador asignado" }
+        revokeActiveRefreshTokens(userId)
 
         val accessToken = jwtService.generateAccessToken(user, primaryRole)
         val refreshToken = jwtService.generateRefreshToken(user)
-        persistRefreshToken(user.id!!, refreshToken)
+        persistRefreshToken(userId, refreshToken)
 
-        return AuthTokensResponse(
+        val accessTokenTtl = jwtService.accessTokenTtl()
+        val refreshTokenTtl = jwtService.refreshTokenTtl()
+        val authUser = AuthUser(
+            id = userId,
+            name = user.fullName,
+            email = user.email
+        )
+
+        return LoginResponse(
+            token = accessToken,
             accessToken = accessToken,
             refreshToken = refreshToken,
-            accessTokenExpiresIn = jwtService.accessTokenTtl(),
-            refreshTokenExpiresIn = jwtService.refreshTokenTtl()
+            tokenType = jwtService.accessTokenType(),
+            expiresIn = accessTokenTtl,
+            accessTokenExpiresIn = accessTokenTtl,
+            refreshTokenExpiresIn = refreshTokenTtl,
+            user = authUser,
+            userDto = authUser
         )
     }
 
@@ -107,7 +127,7 @@ class AuthService(
     }
 
     private fun revokeActiveRefreshTokens(userId: UUID) {
-        val activeTokens = refreshTokenRepository.findAllByUserIdAndRevokedFalse(userId)
+        val activeTokens = refreshTokenRepository.findAllByUser_IdAndRevokedFalse(userId)
         if (activeTokens.isEmpty()) return
         val now = Instant.now()
         activeTokens.forEach {

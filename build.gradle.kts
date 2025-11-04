@@ -25,6 +25,12 @@ repositories {
 	mavenCentral()
 }
 
+sourceSets {
+        main {
+                java.srcDirs("src/main/kotlin")
+        }
+}
+
 dependencies {
 	// MapStruct core
 	implementation("org.mapstruct:mapstruct:1.6.0")
@@ -72,8 +78,9 @@ dependencies {
 	runtimeOnly("com.h2database:h2")
 
 	// Tests
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("org.springframework.security:spring-security-test")
+        testImplementation("org.springframework.boot:spring-boot-starter-test")
+        testImplementation("org.springframework.security:spring-security-test")
+        testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
 }
 
 // Configuración Kapt
