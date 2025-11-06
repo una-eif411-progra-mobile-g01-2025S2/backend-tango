@@ -22,12 +22,6 @@ Scripts para iniciar, detener y gestionar el backend.
 4. **run-local.cmd**
    - Inicia con perfil `local`
 
-### Testing
-
-5. **test-backend.cmd**
-   - Test completo del backend
-   - Verifica PostgreSQL y endpoints
-
 6. **test-simple.cmd**
    - Test rápido (health check y status)
 
@@ -36,18 +30,24 @@ Scripts para iniciar, detener y gestionar el backend.
 7. **setup-postgres.cmd**
    - Configura PostgreSQL automáticamente
    - Crea base de datos y usuario
-
-### Gestión
-
-8. **stop-server.cmd**
-   - Detiene el servidor backend
-   - Mata procesos de Java
-
-9. **prepare-deploy.cmd**
-   - Prepara el proyecto para despliegue
-   - Construye JAR
-
 ### AI Testing (Deprecated)
+
+**Períodos Académicos:**
+- `consultar-periodos.cmd`
+- `crear-periodo.cmd`
+- `consultar-periodos-render.cmd`
+- `crear-periodo-render.cmd`
+
+**Roles:**
+- `consultar-roles.cmd`
+
+**Otros:**
+- `verificar-usuario-render.cmd`
+- `consultar-materias-render.cmd`
+- `consultar-tareas-render.cmd`
+- `create-test-data-render.cmd`
+- `test-ai-render.cmd`
+- `LISTA-SCRIPTS.cmd`
 
 10. **test-ai.cmd / test-ai.ps1 / test-ai-user.cmd / test-ai-user2.cmd**
     - Scripts antiguos de testing de AI

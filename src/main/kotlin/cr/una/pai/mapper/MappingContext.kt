@@ -8,7 +8,14 @@ import java.util.*
 
 @Component
 class MappingContext(@PersistenceContext private val em: EntityManager) {
-    private fun <T> ref(type: Class<T>, id: UUID?): T? = id?.let { em.getReference(type, it) }
+    // Usar find en lugar de getReference para evitar EntityNotFoundException
+    private fun <T> ref(type: Class<T>, id: UUID?): T? = id?.let {
+        try {
+            em.find(type, it)
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     // Métodos usados actualmente por los mappers
     fun user(id: UUID?): User? = ref(User::class.java, id)

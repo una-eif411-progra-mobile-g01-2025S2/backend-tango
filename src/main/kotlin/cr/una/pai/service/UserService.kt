@@ -19,6 +19,7 @@ import java.util.*
 @Transactional
 class UserService(
     private val userRepository: UserRepository,
+    private val roleRepository: RoleRepository,
     private val userMapper: UserMapper,
     private val mappingContext: MappingContext,
     private val passwordEncoder: PasswordEncoder
@@ -69,6 +70,33 @@ class UserService(
             throw IllegalArgumentException("email, fullName y password son obligatorios")
         if (userRepository.findByEmail(input.email!!).isPresent)
             throw IllegalArgumentException("El email ${input.email} ya está registrado")
+
+        // Si no se proporcionan roleIds o los roleIds no existen, asignar rol USER por defecto
+        if (input.roleIds.isNullOrEmpty()) {
+            val userRole = roleRepository.findByName("USER")
+            if (userRole.isPresent) {
+                input.roleIds = listOf(userRole.get().id!!)
+            }
+        } else {
+            // Verificar que los roles existan, si no, usar USER por defecto
+            val validRoleIds = input.roleIds!!.mapNotNull { roleId ->
+                try {
+                    roleRepository.findById(roleId).orElse(null)?.id
+                } catch (e: Exception) {
+                    null
+                }
+            }
+
+            if (validRoleIds.isEmpty()) {
+                val userRole = roleRepository.findByName("USER")
+                if (userRole.isPresent) {
+                    input.roleIds = listOf(userRole.get().id!!)
+                }
+            } else {
+                input.roleIds = validRoleIds
+            }
+        }
+
         val entity = userMapper.toEntity(input, mappingContext)
         entity.password = encodePassword(entity.password)
         val saved = userRepository.save(entity)

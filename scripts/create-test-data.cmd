@@ -6,7 +6,7 @@ echo ========================================
 echo.
 
 REM USUARIO FIJO (proporcionado por el usuario)
-set USER_ID=29c8fd75-066f-4223-9499-44476892d329
+set USER_ID=c740ff58-8993-4923-8e20-403fa64563d9
 set USER_EMAIL=estudiante@test.com
 set USER_NAME=Juan Estudiante
 set USER_DEGREE=Ingenieria Informatica

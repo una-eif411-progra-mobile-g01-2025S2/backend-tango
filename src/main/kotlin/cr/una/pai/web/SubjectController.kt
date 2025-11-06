@@ -6,6 +6,7 @@ import cr.una.pai.mapper.SubjectMapper
 import cr.una.pai.service.SubjectService
 import io.swagger.v3.oas.annotations.Operation
 import jakarta.validation.Valid
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -20,6 +21,7 @@ class SubjectController(
     private val subjectService: SubjectService,
     private val subjectMapper: SubjectMapper
 ) {
+    private val logger = LoggerFactory.getLogger(SubjectController::class.java)
 
     @Operation(summary = "Obtiene todas las materias")
     @GetMapping
@@ -36,8 +38,22 @@ class SubjectController(
 
     @Operation(summary = "Obtiene todas las materias de un usuario")
     @GetMapping("/user/{userId}")
-    fun getByUser(@PathVariable userId: UUID): ResponseEntity<List<SubjectResult>> =
-        ResponseEntity.ok(subjectService.findAllByUserId(userId).map(subjectMapper::toResult))
+    fun getByUser(@PathVariable userId: UUID): ResponseEntity<List<SubjectResult>> {
+        logger.info("========== OBTENIENDO MATERIAS DEL USUARIO ==========")
+        logger.info("userId solicitado: $userId")
+        val subjects = subjectService.findAllByUserId(userId)
+        logger.info("Total de materias encontradas: ${subjects.size}")
+        subjects.forEach { subject ->
+            logger.info("  - Materia: ID=${subject.id}, Nombre=${subject.name}, Código=${subject.code}, Período=${subject.period.name}")
+        }
+        val results = subjects.map(subjectMapper::toResult)
+        logger.info("Resultados mapeados: ${results.size} materias")
+        results.forEach { result ->
+            logger.info("  - Result: ID=${result.id}, Nombre=${result.name}, Código=${result.code}")
+        }
+        logger.info("====================================================")
+        return ResponseEntity.ok(results)
+    }
 
     @Operation(summary = "Obtiene las materias de un usuario en un periodo específico")
     @GetMapping("/user/{userId}/period/{periodId}")

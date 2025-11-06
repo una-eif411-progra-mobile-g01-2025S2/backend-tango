@@ -40,6 +40,10 @@ class UserController(
         ResponseEntity.status(HttpStatus.CREATED).body(created)
     } catch (e: IllegalArgumentException) {
         ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
+    } catch (e: Exception) {
+        e.printStackTrace()
+        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(mapOf("error" to "Se produjo un error inesperado", "message" to (e.message ?: "Unknown error")))
     }
 
     @PostMapping("/signup")

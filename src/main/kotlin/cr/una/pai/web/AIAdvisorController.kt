@@ -32,3 +32,20 @@ class AIAdvisorController(
         return ResponseEntity.ok(response)
     }
 }
+
+// Controller adicional para compatibilidad con el frontend
+@RestController
+@RequestMapping("/api/v1/ai")
+@CrossOrigin(origins = ["*"])
+class AIController(
+    private val aiAdvisorService: AIAdvisorService
+) {
+
+    @Operation(summary = "Obtiene consejos de estudio personalizados (ruta alternativa)")
+    @GetMapping("/study-tips/{userId}")
+    fun getStudyTips(@PathVariable userId: UUID): ResponseEntity<AIAdvisorResponse> {
+        val response = aiAdvisorService.obtenerConsejosParaUsuario(userId = userId)
+        return ResponseEntity.ok(response)
+    }
+}
+

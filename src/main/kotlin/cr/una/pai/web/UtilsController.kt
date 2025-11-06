@@ -87,6 +87,72 @@ class UtilsController(
         ))
     }
 
+    @Operation(summary = "Obtiene todos los datos del sistema organizados")
+    @GetMapping("/data")
+    fun getAllData(): ResponseEntity<Map<String, Any>> {
+        return try {
+            val users = userRepository.findAll()
+            val periods = academicPeriodRepository.findAll()
+            val subjects = subjectRepository.findAll()
+            val tasks = taskRepository.findAll()
+
+            val data = mapOf(
+                "status" to "success",
+                "timestamp" to LocalDate.now().toString(),
+                "data" to mapOf(
+                    "users" to users.map { mapOf(
+                        "id" to it.id.toString(),
+                        "email" to it.email,
+                        "fullName" to it.fullName,
+                        "degree" to it.degree,
+                        "university" to it.university
+                    )},
+                    "periods" to periods.map { mapOf(
+                        "id" to it.id.toString(),
+                        "name" to it.name,
+                        "startDate" to it.startDate.toString(),
+                        "endDate" to it.endDate.toString()
+                    )},
+                    "subjects" to subjects.map { mapOf(
+                        "id" to it.id.toString(),
+                        "name" to it.name,
+                        "code" to it.code,
+                        "credits" to it.credits,
+                        "professor" to (it.professor ?: "Sin asignar"),
+                        "userId" to it.user.id.toString(),
+                        "periodId" to it.period.id.toString()
+                    )},
+                    "tasks" to tasks.map { mapOf(
+                        "id" to it.id.toString(),
+                        "title" to it.title,
+                        "description" to (it.description ?: ""),
+                        "priority" to it.priority,
+                        "status" to it.status.name,
+                        "deadline" to it.deadline?.toString(),
+                        "userId" to it.user.id.toString(),
+                        "subjectId" to it.subject?.id?.toString()
+                    )}
+                ),
+                "counts" to mapOf(
+                    "users" to users.size,
+                    "periods" to periods.size,
+                    "subjects" to subjects.size,
+                    "tasks" to tasks.size
+                )
+            )
+
+            ResponseEntity.ok(data)
+        } catch (e: Exception) {
+            val errorData = mapOf(
+                "status" to "error",
+                "error" to (e.message ?: "Error desconocido al obtener datos"),
+                "timestamp" to LocalDate.now().toString(),
+                "suggestion" to "Verifique que la base de datos esté funcionando correctamente"
+            )
+            ResponseEntity.status(500).body(errorData)
+        }
+    }
+
     @Operation(summary = "Verifica el estado del sistema y datos existentes")
     @GetMapping("/status")
     fun systemStatus(): ResponseEntity<Map<String, Any>> {

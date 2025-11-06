@@ -7,6 +7,7 @@ import cr.una.pai.service.TaskService
 import cr.una.pai.domain.TaskStatus
 import io.swagger.v3.oas.annotations.Operation
 import jakarta.validation.Valid
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -21,6 +22,7 @@ class TaskController(
     private val taskService: TaskService,
     private val taskMapper: TaskMapper
 ) {
+    private val logger = LoggerFactory.getLogger(TaskController::class.java)
 
     @Operation(summary = "Obtiene todas las tareas")
     @GetMapping
@@ -35,8 +37,22 @@ class TaskController(
 
     @Operation(summary = "Obtiene todas las tareas de un usuario")
     @GetMapping("/user/{userId}")
-    fun getTasksByUserId(@PathVariable userId: UUID): ResponseEntity<List<TaskResult>> =
-        ResponseEntity.ok(taskService.findAllByUserId(userId).map(taskMapper::toResult))
+    fun getTasksByUserId(@PathVariable userId: UUID): ResponseEntity<List<TaskResult>> {
+        logger.info("========== OBTENIENDO TAREAS DEL USUARIO ==========")
+        logger.info("userId solicitado: $userId")
+        val tasks = taskService.findAllByUserId(userId)
+        logger.info("Total de tareas encontradas en BD: ${tasks.size}")
+        tasks.forEach { task ->
+            logger.info("  - Tarea: ID=${task.id}, Título=${task.title}, Estado=${task.status}, Materia=${task.subject?.name ?: "Sin materia"}")
+        }
+        val results = tasks.map(taskMapper::toResult)
+        logger.info("Resultados mapeados: ${results.size} tareas")
+        results.forEach { result ->
+            logger.info("  - Result: ID=${result.id}, Título=${result.title}, Estado=${result.status}")
+        }
+        logger.info("====================================================")
+        return ResponseEntity.ok(results)
+    }
 
     @Operation(summary = "Obtiene las tareas de un usuario filtradas por estado")
     @GetMapping("/user/{userId}/status/{status}")
@@ -61,13 +77,30 @@ class TaskController(
 
     @Operation(summary = "Crea una nueva tarea")
     @PostMapping
-    fun createTask(@Valid @RequestBody input: TaskInput): ResponseEntity<Any> =
-        try {
+    fun createTask(@Valid @RequestBody input: TaskInput): ResponseEntity<Any> {
+        logger.info("========== CONTROLLER: SOLICITUD DE CREACIÓN DE TAREA ==========")
+        logger.info("Request body recibido: $input")
+        return try {
             val created = taskService.create(input)
+            logger.info("Tarea creada exitosamente en controller")
             ResponseEntity.status(HttpStatus.CREATED).body(created)
         } catch (e: IllegalArgumentException) {
-            ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
+            logger.error("Error de validación en controller: ${e.message}")
+            logger.error("Stack trace:", e)
+            ResponseEntity.badRequest().body(mapOf(
+                "error" to (e.message ?: "Invalid data"),
+                "timestamp" to java.time.Instant.now().toString()
+            ))
+        } catch (e: Exception) {
+            logger.error("Error inesperado en controller: ${e.message}")
+            logger.error("Stack trace:", e)
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapOf(
+                "error" to "Error interno del servidor",
+                "message" to (e.message ?: "Unknown error"),
+                "timestamp" to java.time.Instant.now().toString()
+            ))
         }
+    }
 
     @Operation(summary = "Actualiza una tarea por su ID")
     @PutMapping("/{id}")
@@ -106,4 +139,41 @@ class TaskController(
         } catch (e: IllegalArgumentException) {
             ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid data")))
         }
+
+    @Operation(summary = "DEBUG: Obtiene información detallada de todas las tareas de un usuario")
+    @GetMapping("/debug/user/{userId}")
+    fun debugTasksByUserId(@PathVariable userId: UUID): ResponseEntity<Map<String, Any>> {
+        logger.info("========== DEBUG: TAREAS DEL USUARIO ==========")
+        logger.info("userId: $userId")
+
+        val tasks = taskService.findAllByUserId(userId)
+        logger.info("Total de tareas: ${tasks.size}")
+
+        val debugInfo = mapOf(
+            "userId" to userId.toString(),
+            "totalTasks" to tasks.size,
+            "tasks" to tasks.map { task ->
+                mapOf(
+                    "id" to task.id.toString(),
+                    "title" to task.title,
+                    "description" to task.description,
+                    "priority" to task.priority,
+                    "status" to task.status.name,
+                    "deadline" to task.deadline?.toString(),
+                    "user" to mapOf(
+                        "id" to task.user.id.toString(),
+                        "email" to task.user.email
+                    ),
+                    "subject" to mapOf(
+                        "id" to task.subject.id.toString(),
+                        "name" to task.subject.name,
+                        "code" to task.subject.code
+                    )
+                )
+            }
+        )
+
+        logger.info("================================================")
+        return ResponseEntity.ok(debugInfo)
+    }
 }
